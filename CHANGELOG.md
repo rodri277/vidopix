@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses [Semantic Versioning](https://semver.org/).
 
+## [1.2.2] - 2026-10-03
+
+### Changed
+
+- The README header is now an animation of a warrior resting at a campfire: five layers and twelve frames with a flickering fire, sparks, smoke, twinkling stars and the name in the sky. `pnpm campfire` builds it, opens it in the editor as a project and exports it with the editor's GIF export. The slime hop stays in the animation section.
+
 ## [1.2.1] - 2026-10-03
 
 ### Fixed

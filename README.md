@@ -4,9 +4,9 @@
 
 A pixel art editor that runs in your browser: no install, no account, and a built-in palette generator. By vidotho.
 
-![A slime hopping under a crescent moon, drawn in Vidopix and exported with its own GIF export](docs/media/showcase.gif)
+![A warrior resting at a campfire under a starry sky, exported from Vidopix as an animated GIF](docs/media/campfire.gif)
 
-> **Status:** v1.2.1, all phases of [SPEC.md](SPEC.md) done. The animation above was drawn in the editor, with four layers and eight frames, and exported with its own GIF export (`pnpm showcase` redraws it). **[Try it live](https://vidopix.vercel.app)** (see [Deploying](#deploying)).
+> **Status:** v1.2.2, all phases of [SPEC.md](SPEC.md) done. The animation above has five layers and twelve frames. `pnpm campfire` builds it, opens it in the editor as a project and exports it with the editor's own GIF export. **[Try it live](https://vidopix.vercel.app)** (see [Deploying](#deploying)).
 
 ![The editor with an animation, its timeline and onion skin](docs/media/animation.png)
 
@@ -49,7 +49,7 @@ A pixel art editor that runs in your browser: no install, no account, and a buil
 
 ![Exporting an animated GIF](docs/media/export.png)
 
-![The header animation open in the editor: four layers and eight frames](docs/media/showcase-editor.png)
+![A slime hopping under a crescent moon, drawn click by click with the editor's tools (`pnpm showcase`)](docs/media/showcase.gif)
 
 ## Technical highlights
 
@@ -135,7 +135,8 @@ pnpm dev
 | `pnpm size`       | Bundle size budget                                                     |
 | `pnpm lighthouse` | Lighthouse on the production build                                     |
 | `pnpm media`      | Regenerates the screenshots of this README                             |
-| `pnpm showcase`   | Redraws the header animation in the editor and exports it              |
+| `pnpm showcase`   | Draws the slime animation with the editor's tools and exports it       |
+| `pnpm campfire`   | Builds the header animation, opens it in the editor and exports it     |
 
 ## Deploying
 
