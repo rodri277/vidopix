@@ -7,11 +7,10 @@ import type { Layer, Sprite } from '../domain/sprite.js';
 import {
   MAX_PROJECT_BYTES,
   PROJECT_SCHEMA_VERSION,
-  bytesToPixels,
   parseProject,
-  pixelsToBytes,
   serializeProject,
 } from './project-format.js';
+import { bytesToPixels, pixelsToBytes } from './pixel-bytes.js';
 
 function makeSprite(
   width: number,

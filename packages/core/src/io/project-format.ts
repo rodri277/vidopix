@@ -6,10 +6,11 @@ import {
   createPalette,
   paletteColor,
 } from '../domain/palette.js';
-import { MAX_CANVAS_SIZE, PixelBuffer } from '../domain/pixel-buffer.js';
+import { MAX_CANVAS_SIZE } from '../domain/pixel-buffer.js';
 import type { Layer, Sprite } from '../domain/sprite.js';
 import { err, ok, type Result } from '../result.js';
 import { base64ToBytes, bytesToBase64 } from './bytes.js';
+import { bytesToPixels, pixelsToBytes } from './pixel-bytes.js';
 
 /** The `.vidopix` file format: a JSON document with the layers' pixels as base64 RGBA bytes. */
 export const PROJECT_FORMAT = 'vidopix';
@@ -74,32 +75,6 @@ function failure(
   message: string,
 ): Result<never, ProjectParseError> {
   return err({ kind: 'invalid-project', reason, message });
-}
-
-// ---- Pixels <-> bytes (R, G, B, A order, independent of the CPU) ----
-
-export function pixelsToBytes(buffer: PixelBuffer): Uint8Array {
-  const bytes = new Uint8Array(buffer.data.length * 4);
-  for (let i = 0; i < buffer.data.length; i++) {
-    const color = buffer.data[i] ?? 0;
-    bytes[i * 4] = color & 0xff;
-    bytes[i * 4 + 1] = (color >>> 8) & 0xff;
-    bytes[i * 4 + 2] = (color >>> 16) & 0xff;
-    bytes[i * 4 + 3] = color >>> 24;
-  }
-  return bytes;
-}
-
-export function bytesToPixels(bytes: Uint8Array, width: number, height: number): PixelBuffer {
-  const buffer = PixelBuffer.create(width, height);
-  for (let i = 0; i < buffer.data.length; i++) {
-    const r = bytes[i * 4] ?? 0;
-    const g = bytes[i * 4 + 1] ?? 0;
-    const b = bytes[i * 4 + 2] ?? 0;
-    const a = bytes[i * 4 + 3] ?? 0;
-    buffer.data[i] = ((a << 24) | (b << 16) | (g << 8) | r) >>> 0;
-  }
-  return buffer;
 }
 
 // ---- Writing ----

@@ -11,7 +11,7 @@ import type { Layer, Sprite } from '../domain/sprite.js';
 import type { IdGenerator } from '../ports/id-generator.js';
 import { err, ok, type Result } from '../result.js';
 import { base64ToBytes, bytesToBase64, utf8Decode, utf8Encode } from './bytes.js';
-import { bytesToPixels, pixelsToBytes } from './project-format.js';
+import { bytesToPixels, pixelsToBytes } from './pixel-bytes.js';
 
 /**
  * A compact binary form of a sprite, meant to be compressed and put inside a link. It carries the
