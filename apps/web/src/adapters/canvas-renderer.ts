@@ -105,6 +105,10 @@ export class CanvasRenderer {
       session.on('previewChanged', ({ preview }) => {
         this.setPreview(preview);
       }),
+      session.on('optionsChanged', () => {
+        this.overlayDirty = true;
+        this.schedule();
+      }),
       session.on('selectionChanged', ({ selection }) => {
         this.overlayDirty = true;
         this.updateAnts(selection !== null);
@@ -434,6 +438,7 @@ export class CanvasRenderer {
       }
     }
 
+    this.drawSymmetryGuides(context, scale);
     this.drawFloating(context, scale);
     this.drawSelection(context, scale);
 
@@ -494,5 +499,29 @@ export class CanvasRenderer {
     context.strokeStyle = '#fff';
     context.strokeRect(x, y, width, height);
     context.setLineDash([]);
+  }
+
+  /** Dashed lines through the middle of the canvas where mirrored strokes are reflected. */
+  private drawSymmetryGuides(context: CanvasRenderingContext2D, scale: number): void {
+    const { mirrorX, mirrorY } = this.session.toolOptions;
+    if (!mirrorX && !mirrorY) return;
+    const { width, height } = this.session.sprite;
+    context.save();
+    context.lineWidth = 1;
+    context.strokeStyle = '#7c5cff';
+    context.setLineDash([6, 4]);
+    context.beginPath();
+    if (mirrorX) {
+      const x = Math.round(this.panX + (width / 2) * scale) + 0.5;
+      context.moveTo(x, this.panY);
+      context.lineTo(x, this.panY + height * scale);
+    }
+    if (mirrorY) {
+      const y = Math.round(this.panY + (height / 2) * scale) + 0.5;
+      context.moveTo(this.panX, y);
+      context.lineTo(this.panX + width * scale, y);
+    }
+    context.stroke();
+    context.restore();
   }
 }

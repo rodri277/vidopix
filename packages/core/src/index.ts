@@ -42,10 +42,11 @@ export {
   clampZoom,
   fitViewport,
   nextZoom,
+  pinchViewport,
   screenToDocument,
   zoomAt,
 } from './viewport/viewport.js';
-export type { Viewport } from './viewport/viewport.js';
+export type { TouchPair, TouchPoint, Viewport } from './viewport/viewport.js';
 export {
   blendPixel,
   compositePixel,

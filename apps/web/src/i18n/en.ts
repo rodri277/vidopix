@@ -132,6 +132,33 @@ export const en = {
   'shortcuts.secondary': 'Secondary color: right click or Shift+click on a swatch',
   'shortcuts.help': 'Show this list',
   'shortcuts.nudge': 'Nudge the selection (Move tool)',
+
+  // Tool options
+  'options.size': 'Size',
+  'options.sizeValue': '{size} px',
+  'options.fillMode': 'Fill mode',
+  'options.contiguous': 'Contiguous',
+  'options.global': 'Global',
+  'options.tolerance': 'Tolerance',
+  'options.shapeStyle': 'Shape style',
+  'options.outline': 'Outline',
+  'options.filled': 'Filled',
+  'options.shiftSquare': 'Hold Shift for a perfect square',
+  'options.shiftCircle': 'Hold Shift for a perfect circle',
+  'options.shiftLine': 'Hold Shift for 0, 45 or 90 degrees',
+  'options.hintEyedropper':
+    'Click a pixel to pick its color. Right click picks the secondary color.',
+  'options.hintSelect':
+    'Drag to select a rectangle, Shift for a square. Click to deselect. Drawing stays inside the selection.',
+  'options.hintMove':
+    'Drag the selection to move its pixels (the whole layer if nothing is selected). Enter drops them, Esc cancels.',
+  'options.aids': 'Drawing aids',
+  'options.mirrorX': 'Mirror left-right',
+  'options.mirrorY': 'Mirror top-bottom',
+  'options.dither': 'Dither',
+  'options.ditherValue': '{percent}%',
+  'options.pixelPerfect': 'Pixel-perfect',
+  'options.pressure': 'Pen pressure',
 } as const;
 
 export type MessageKey = keyof typeof en;

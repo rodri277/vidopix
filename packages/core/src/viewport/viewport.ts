@@ -84,3 +84,38 @@ export function fitViewport(
   const zoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, fitting));
   return centerViewport(zoom, viewWidth, viewHeight, spriteWidth, spriteHeight);
 }
+
+export interface TouchPoint {
+  readonly x: number;
+  readonly y: number;
+}
+
+export interface TouchPair {
+  readonly a: TouchPoint;
+  readonly b: TouchPoint;
+}
+
+const distanceOf = (pair: TouchPair): number =>
+  Math.hypot(pair.b.x - pair.a.x, pair.b.y - pair.a.y);
+const midpointOf = (pair: TouchPair): TouchPoint => ({
+  x: (pair.a.x + pair.b.x) / 2,
+  y: (pair.a.y + pair.b.y) / 2,
+});
+
+/**
+ * The view after two fingers move from `from` to `to`: spreading them zooms, moving them together
+ * pans, and the document point that was between the fingers stays between them.
+ */
+export function pinchViewport(start: Viewport, from: TouchPair, to: TouchPair): Viewport {
+  const ratio = distanceOf(to) / Math.max(1, distanceOf(from));
+  const zoom = clampZoom(start.zoom * ratio);
+  const before = midpointOf(from);
+  const after = midpointOf(to);
+  const docX = (before.x - start.panX) / start.zoom;
+  const docY = (before.y - start.panY) / start.zoom;
+  return {
+    zoom,
+    panX: Math.round(after.x - docX * zoom),
+    panY: Math.round(after.y - docY * zoom),
+  };
+}

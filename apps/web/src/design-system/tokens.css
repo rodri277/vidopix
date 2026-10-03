@@ -29,4 +29,21 @@
   --toolbar-width: 48px;
   --side-panel-width: 280px;
   --statusbar-height: 24px;
+  --tool-size: 36px;
+}
+
+/* Tablets: a narrower side panel, so the canvas keeps room down to 768 px of width. */
+@media (max-width: 1023px) {
+  :root {
+    --side-panel-width: 240px;
+  }
+}
+
+/* Touch screens: bigger targets for fingers. */
+@media (pointer: coarse) {
+  :root {
+    --toolbar-width: 56px;
+    --tool-size: 44px;
+    --options-height: 44px;
+  }
 }

@@ -121,4 +121,30 @@ export const es: Readonly<Record<MessageKey, string>> = {
   'shortcuts.secondary': 'Color secundario: clic derecho o Shift+clic en una muestra',
   'shortcuts.help': 'Mostrar esta lista',
   'shortcuts.nudge': 'Desplazar la selección (herramienta Mover)',
+
+  'options.size': 'Tamaño',
+  'options.sizeValue': '{size} px',
+  'options.fillMode': 'Modo de relleno',
+  'options.contiguous': 'Contiguo',
+  'options.global': 'Global',
+  'options.tolerance': 'Tolerancia',
+  'options.shapeStyle': 'Estilo de la forma',
+  'options.outline': 'Contorno',
+  'options.filled': 'Relleno',
+  'options.shiftSquare': 'Mantén Mayús para un cuadrado perfecto',
+  'options.shiftCircle': 'Mantén Mayús para un círculo perfecto',
+  'options.shiftLine': 'Mantén Mayús para 0, 45 o 90 grados',
+  'options.hintEyedropper':
+    'Haz clic en un píxel para tomar su color. El clic derecho toma el color secundario.',
+  'options.hintSelect':
+    'Arrastra para seleccionar un rectángulo, Mayús para un cuadrado. Un clic deselecciona. Se dibuja solo dentro de la selección.',
+  'options.hintMove':
+    'Arrastra la selección para mover sus píxeles (la capa entera si no hay selección). Intro los suelta, Esc cancela.',
+  'options.aids': 'Ayudas de dibujo',
+  'options.mirrorX': 'Simetría izquierda-derecha',
+  'options.mirrorY': 'Simetría arriba-abajo',
+  'options.dither': 'Trama',
+  'options.ditherValue': '{percent} %',
+  'options.pixelPerfect': 'Pixel-perfect',
+  'options.pressure': 'Presión del lápiz',
 };
