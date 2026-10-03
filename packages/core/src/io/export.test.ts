@@ -1,6 +1,7 @@
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
 import { packRgba } from '../domain/color.js';
+import { createPalette } from '../domain/palette.js';
 import { PixelBuffer } from '../domain/pixel-buffer.js';
 import type { Layer, Sprite } from '../domain/sprite.js';
 import { exportSprite, MAX_EXPORT_DIMENSION } from './export.js';
@@ -22,7 +23,7 @@ function layer(buffer: PixelBuffer, overrides: Partial<Layer> = {}): Layer {
 }
 
 function spriteOf(width: number, height: number, ...layers: Layer[]): Sprite {
-  return { id: 's', name: 'Test', width, height, layers };
+  return { id: 's', name: 'Test', width, height, layers, palette: createPalette('p') };
 }
 
 describe('exportSprite', () => {

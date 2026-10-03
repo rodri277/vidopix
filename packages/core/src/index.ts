@@ -57,3 +57,12 @@ export { DocumentEditor } from './document/document-editor.js';
 export type { BlockReason, DocumentEvents, Floating } from './document/document-editor.js';
 export { MAX_LAYERS } from './document/layer-ops.js';
 export { scaleAlpha } from './domain/compositing.js';
+export {
+  MAX_PALETTE_COLORS,
+  MAX_PALETTE_NAME_LENGTH,
+  createPalette,
+  indexOfColor,
+  opaque,
+  paletteColor,
+} from './domain/palette.js';
+export type { Palette, PaletteColor } from './domain/palette.js';

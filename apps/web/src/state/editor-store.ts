@@ -38,6 +38,8 @@ const BLOCKED_MESSAGES: Readonly<Record<BlockReason, string>> = {
   'layer-hidden': 'The active layer is hidden',
   'nothing-selected': 'Nothing is selected',
   'single-layer': 'A sprite needs at least one layer',
+  'color-in-palette': 'That color is already in the palette',
+  'palette-full': 'The palette is full (256 colors)',
 };
 
 export interface EditorState {

@@ -2,6 +2,7 @@ import { blendPixel, compositePixel, compositeSprite, scaleAlpha } from '../doma
 import type { Color } from '../domain/color.js';
 import { PixelBuffer } from '../domain/pixel-buffer.js';
 import { intersectRects, rectsEqual, type Rect } from '../domain/rect.js';
+import type { Palette, PaletteColor } from '../domain/palette.js';
 import type { Layer, Sprite } from '../domain/sprite.js';
 import { PixelPatchCommand, type Command } from '../history/command.js';
 import { DEFAULT_HISTORY_BUDGET_BYTES, HistoryManager } from '../history/history-manager.js';
@@ -11,6 +12,17 @@ import { CompoundCommand, StateCommand, type DocumentHolder } from '../history/s
 import type { IdGenerator } from '../ports/id-generator.js';
 import { Emitter } from '../session/emitter.js';
 import { activeLayerOf, findLayer, type DocumentState } from './document-state.js';
+import {
+  addPaletteColor,
+  appendPaletteColors,
+  movePaletteColor,
+  removePaletteColor,
+  renamePalette,
+  renamePaletteColor,
+  replacePalette,
+  setPaletteColor,
+  whyCannotAdd,
+} from './palette-ops.js';
 import {
   addLayer,
   deleteLayer,
@@ -23,7 +35,13 @@ import {
 
 export type HistoryCause = 'record' | 'undo' | 'redo' | 'clear';
 
-export type BlockReason = 'layer-locked' | 'layer-hidden' | 'nothing-selected' | 'single-layer';
+export type BlockReason =
+  | 'layer-locked'
+  | 'layer-hidden'
+  | 'nothing-selected'
+  | 'single-layer'
+  | 'color-in-palette'
+  | 'palette-full';
 
 /** Pixels lifted from a layer or pasted, held above the document until they are dropped. */
 export interface Floating {
@@ -39,6 +57,7 @@ export interface DocumentEvents {
   /** Layers were added, removed, reordered or edited, or the active layer changed. */
   layersChanged: { sprite: Sprite; activeLayerId: string };
   selectionChanged: { selection: Rect | null };
+  paletteChanged: { palette: Palette };
   floatingChanged: { floating: Floating | null };
   /** The whole document was replaced (new sprite). */
   spriteReplaced: { sprite: Sprite };
@@ -159,6 +178,7 @@ export class DocumentEditor {
     this.events.emit('spriteReplaced', { sprite });
     this.emitLayers();
     this.events.emit('selectionChanged', { selection: null });
+    this.events.emit('paletteChanged', { palette: sprite.palette });
     this.events.emit('floatingChanged', { floating: null });
     this.emitHistory('clear', null);
   }
@@ -324,6 +344,58 @@ export class DocumentEditor {
       }),
       bufferBytes(sprite) * (sprite.layers.length + 1),
     );
+  }
+
+  // ---- Palette ----
+
+  get palette(): Palette {
+    return this.sprite.palette;
+  }
+
+  /** Adds a color to the palette. Returns false (and says why) if it could not be added. */
+  addPaletteColor(color: Color, name?: string): boolean {
+    const outcome = whyCannotAdd(this.state, color);
+    if (outcome !== 'added') {
+      this.events.emit('actionBlocked', {
+        reason: outcome === 'duplicate' ? 'color-in-palette' : 'palette-full',
+      });
+      return false;
+    }
+    this.paletteEdit('Add color', (state) => addPaletteColor(state, color, name));
+    return true;
+  }
+
+  appendPaletteColors(colors: readonly PaletteColor[]): void {
+    this.paletteEdit('Add colors to palette', (state) => appendPaletteColors(state, colors));
+  }
+
+  removePaletteColor(index: number): void {
+    this.paletteEdit('Remove color', (state) => removePaletteColor(state, index));
+  }
+
+  movePaletteColor(from: number, to: number): void {
+    this.paletteEdit('Reorder palette', (state) => movePaletteColor(state, from, to));
+  }
+
+  renamePaletteColor(index: number, name: string | undefined): void {
+    this.paletteEdit('Rename color', (state) => renamePaletteColor(state, index, name));
+  }
+
+  setPaletteColor(index: number, color: Color): void {
+    this.paletteEdit('Edit palette color', (state) => setPaletteColor(state, index, color));
+  }
+
+  renamePalette(name: string): void {
+    this.paletteEdit('Rename palette', (state) => renamePalette(state, name));
+  }
+
+  /** Replaces the palette's name and colors, for example when loading a preset. */
+  loadPalette(name: string, colors: readonly PaletteColor[]): void {
+    this.paletteEdit('Load palette', (state) => replacePalette(state, name, colors));
+  }
+
+  private paletteEdit(label: string, compute: (state: DocumentState) => DocumentState): void {
+    this.structural(label, compute, 0, false);
   }
 
   // ---- Selection ----
@@ -584,15 +656,18 @@ export class DocumentEditor {
     label: string,
     compute: (state: DocumentState) => DocumentState,
     retainedBytes = 0,
+    affectsPixels = true,
   ): void {
     this.commitFloating();
     const before = this.state;
     const next = compute(before);
     if (next === before) return;
     this.holder.state = next;
-    this.history.record(new StateCommand(label, this.holder, before, next, true, retainedBytes));
+    this.history.record(
+      new StateCommand(label, this.holder, before, next, affectsPixels, retainedBytes),
+    );
     this.publishChanges(before);
-    this.markDirty(fullRect(next.sprite));
+    if (affectsPixels) this.markDirty(fullRect(next.sprite));
     this.emitHistory('record', label);
   }
 
@@ -606,8 +681,15 @@ export class DocumentEditor {
 
   private publishChanges(previous: DocumentState): void {
     const current = this.state;
-    if (current.sprite !== previous.sprite || current.activeLayerId !== previous.activeLayerId) {
+    if (
+      current.sprite.layers !== previous.sprite.layers ||
+      current.sprite.width !== previous.sprite.width ||
+      current.activeLayerId !== previous.activeLayerId
+    ) {
       this.emitLayers();
+    }
+    if (current.sprite.palette !== previous.sprite.palette) {
+      this.events.emit('paletteChanged', { palette: current.sprite.palette });
     }
     if (!rectsEqual(current.selection, previous.selection)) {
       this.events.emit('selectionChanged', { selection: current.selection });

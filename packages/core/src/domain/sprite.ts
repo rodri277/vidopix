@@ -1,5 +1,6 @@
 import { err, ok, type Result } from '../result.js';
 import type { IdGenerator } from '../ports/id-generator.js';
+import { createPalette, type Palette } from './palette.js';
 import { MAX_CANVAS_SIZE, PixelBuffer } from './pixel-buffer.js';
 
 export type BlendMode = 'normal';
@@ -21,6 +22,7 @@ export interface Sprite {
   readonly width: number;
   readonly height: number;
   readonly layers: readonly Layer[];
+  readonly palette: Palette;
 }
 
 export interface SpriteOptions {
@@ -58,5 +60,13 @@ export function createSprite(
     blendMode: 'normal',
     buffer: PixelBuffer.create(width, height),
   };
-  return ok({ id, name: options.name ?? 'Untitled', width, height, layers: [layer] });
+  const palette = createPalette(ids.next());
+  return ok({
+    id,
+    name: options.name ?? 'Untitled',
+    width,
+    height,
+    layers: [layer],
+    palette,
+  });
 }

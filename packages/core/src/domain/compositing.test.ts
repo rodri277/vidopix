@@ -7,6 +7,7 @@ import {
   compositeSprite,
   scaleAlpha,
 } from './compositing.js';
+import { createPalette } from './palette.js';
 import { PixelBuffer } from './pixel-buffer.js';
 import type { Layer, Sprite } from './sprite.js';
 
@@ -27,7 +28,7 @@ function layer(buffer: PixelBuffer, overrides: Partial<Layer> = {}): Layer {
 }
 
 function spriteOf(width: number, height: number, ...layers: Layer[]): Sprite {
-  return { id: 's', name: 'Test', width, height, layers };
+  return { id: 's', name: 'Test', width, height, layers, palette: createPalette('p') };
 }
 
 describe('compositeSprite', () => {
