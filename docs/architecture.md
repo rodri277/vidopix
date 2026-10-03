@@ -28,9 +28,9 @@ flowchart LR
 
 Arrows only go down into the core or come out of it as events. The core never knows about React or the browser.
 
-## Current state (Phase 1)
+## Current state (Phase 2)
 
-The engine in `packages/core` has the document model, algorithms, tools, history, color math, export and viewport math. `apps/web` has the Canvas 2D renderer, pointer and keyboard input, the menus, panels and dialogs. Layers beyond one, selections, palettes, persistence and animation arrive in later phases.
+The engine in `packages/core` has the document model, algorithms, tools, history, color math, export and viewport math. `DocumentEditor` owns the layers, the selection, floating (moved or pasted) content, the clipboard and the history; `EditorSession` adds the tools, colors and pointer input on top (ADR 010, ADR 011). `apps/web` has the Canvas 2D renderer, pointer and keyboard input, the menus, the layers and color panels, and the dialogs. Palettes, persistence and animation arrive in later phases.
 
 ## Lifecycle of a stroke
 
@@ -52,3 +52,7 @@ Run them with `pnpm lint`. `tools/check-boundaries.test.mjs` verifies that the r
 ## Keyboard drawing
 
 The canvas is a focusable widget. Arrow keys move a pixel cursor (Alt moves 8 pixels), and holding Enter behaves like pressing the primary mouse button: it starts a stroke, arrow keys extend it, releasing Enter ends it. Escape cancels the stroke. This goes through the same `EditorSession` calls as the mouse.
+
+## Layers and floating content
+
+Document state that is not pixels (layers, active layer, selection) is one immutable value replaced on each change, with pixel buffers shared between versions (ADR 010). Moving or pasting pixels is a single open transaction: the content floats above the layer until it is dropped, and a cancel puts everything back (ADR 011). Every edit first drops floating content, so the history never sees a half-finished move.
