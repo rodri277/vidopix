@@ -21,3 +21,7 @@ export type { HistoryStep } from './history/history-manager.js';
 export { PatchRecorder } from './history/patch-recorder.js';
 export { applyPatch, createPatch, patchSizeBytes, revertPatch } from './history/pixel-patch.js';
 export type { PixelPatch, RectPatch, SparsePatch } from './history/pixel-patch.js';
+export { EditorSession } from './session/editor-session.js';
+export type { HistoryCause, SessionConfig, SessionEvents } from './session/editor-session.js';
+export { DEFAULT_TOOL_OPTIONS, MAX_BRUSH_SIZE, MIN_BRUSH_SIZE, TOOL_IDS } from './tools/tool.js';
+export type { ColorSlot, PointerInput, Preview, ToolId, ToolOptions } from './tools/tool.js';
