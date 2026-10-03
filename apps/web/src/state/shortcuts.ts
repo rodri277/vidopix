@@ -27,7 +27,10 @@ export type ShortcutAction =
   | { readonly type: 'layer-down' }
   | { readonly type: 'open-file' }
   | { readonly type: 'save-file' }
-  | { readonly type: 'shortcuts-help' };
+  | { readonly type: 'shortcuts-help' }
+  | { readonly type: 'previous-frame' }
+  | { readonly type: 'next-frame' }
+  | { readonly type: 'toggle-playback' };
 
 export interface KeyInput {
   readonly key: string;
@@ -104,6 +107,14 @@ export function resolveShortcut(input: KeyInput, isMac: boolean): ShortcutAction
       return { type: 'zoom-fit' };
     case '1':
       return { type: 'zoom-100' };
+    case ',':
+    case '<':
+      return { type: 'previous-frame' };
+    case '.':
+    case '>':
+      return { type: 'next-frame' };
+    case 'p':
+      return { type: 'toggle-playback' };
     default:
       return null;
   }

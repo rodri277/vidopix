@@ -93,6 +93,7 @@ export function attachPointerInput(
       return;
     }
     if (event.button !== 0 && event.button !== 2) return;
+    if (store.getState().playing) return;
     event.preventDefault();
     drawingPointer = event.pointerId;
     element.setPointerCapture(event.pointerId);

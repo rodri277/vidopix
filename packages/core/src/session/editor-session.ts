@@ -67,6 +67,7 @@ const EDITING_TOOLS: ReadonlySet<ToolId> = new Set([
 const DOCUMENT_EVENTS: ReadonlySet<string> = new Set([
   'documentChanged',
   'layersChanged',
+  'framesChanged',
   'selectionChanged',
   'paletteChanged',
   'nameChanged',

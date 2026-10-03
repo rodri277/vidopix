@@ -48,7 +48,7 @@ describe('ExportDialog', () => {
   it('previews the output size from the scale', async () => {
     const { store } = renderWithEditor(<Dialogs />);
     store.getState().openDialog('export');
-    const dialog = await screen.findByRole('dialog', { name: 'Export PNG', hidden: true });
+    const dialog = await screen.findByRole('dialog', { name: 'Export', hidden: true });
     expect(within(dialog).getByText('Output size: 32×32 px')).toBeInTheDocument();
 
     fireEvent.change(within(dialog).getByLabelText('Scale'), { target: { value: '3' } });

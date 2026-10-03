@@ -62,7 +62,7 @@ export interface DecodedImage {
 /** Opens the export dialog, exports at the given scale and returns the decoded PNG. */
 export async function exportPng(page: Page, scale = 1, transparent = true): Promise<DecodedImage> {
   await page.keyboard.press('ControlOrMeta+e');
-  const dialog = page.getByRole('dialog', { name: 'Export PNG' });
+  const dialog = page.getByRole('dialog', { name: 'Export' });
   await expect(dialog).toBeVisible();
   await dialog.getByLabel('Scale').fill(String(scale));
   const checkbox = dialog.getByLabel('Transparent background');

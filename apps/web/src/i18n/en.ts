@@ -9,7 +9,7 @@ export const en = {
   'file.open': 'Open file…',
   'file.recent': 'Open recent…',
   'file.save': 'Save as .vidopix…',
-  'file.exportPng': 'Export PNG…',
+  'file.exportPng': 'Export…',
   'file.share': 'Share link…',
 
   // Save state
@@ -274,7 +274,23 @@ export const en = {
   'newSprite.hint': 'The sprite you are working on stays in Open recent.',
 
   // Export dialog
-  'export.title': 'Export PNG',
+  'export.title': 'Export',
+  'export.format': 'Format',
+  'export.formatPng': 'PNG image',
+  'export.formatGif': 'Animated GIF',
+  'export.formatSheet': 'Spritesheet (PNG + JSON)',
+  'export.columns': 'Columns',
+  'export.sheetSize': 'Sheet: {width}×{height} px, {frames} frames',
+  'export.gifSize': 'GIF: {width}×{height} px, {frames} frames, {seconds} s per loop',
+  'export.gifHint':
+    'A GIF has no partial transparency: pixels more than half transparent stay transparent.',
+  'export.sheetHint':
+    'Two files are saved: the image and a JSON file with the position and duration of each frame.',
+  'export.encoding': 'Creating the GIF… {percent}%',
+  'export.gifFailed': 'The GIF could not be created. Try a smaller scale.',
+  'export.sheetFailed':
+    'The spritesheet could not be created. Try a smaller scale or more columns.',
+  'export.canceled': 'Export canceled.',
   'export.scale': 'Scale',
   'export.transparent': 'Transparent background',
   'export.size': 'Output size: {width}×{height} px',
@@ -283,6 +299,36 @@ export const en = {
     'That would be {width}×{height} px. Browsers cannot go above {max} px per side. Choose a smaller scale.',
   'export.invalidScale': 'Choose a whole-number scale.',
   'export.failed': 'The browser could not create the PNG. Try a smaller scale.',
+
+  // Timeline and animation
+  'timeline.title': 'Timeline',
+  'timeline.actions': 'Animation controls',
+  'timeline.frames': 'Frames',
+  'timeline.frame': 'Frame {number}',
+  'timeline.frameInfo': 'Frame {number} of {total}, {duration} ms',
+  'timeline.duration': 'Duration of frame {number} (ms)',
+  'timeline.new': 'New frame',
+  'timeline.duplicate': 'Duplicate frame',
+  'timeline.delete': 'Delete frame',
+  'timeline.moveLeft': 'Move frame earlier',
+  'timeline.moveRight': 'Move frame later',
+  'timeline.play': 'Play',
+  'timeline.pause': 'Pause',
+  'timeline.fps': 'FPS',
+  'timeline.onionPrevious': 'Show the previous frame',
+  'timeline.onionNext': 'Show the next frame',
+  'timeline.onionOpacity': 'Onion skin',
+  'animation.previousFrame': 'Previous frame',
+  'animation.nextFrame': 'Next frame',
+  'animation.play': 'Play or pause',
+  'shortcuts.group.animation': 'Animation',
+  'shortcuts.reorderFrame': 'Move the frame in the timeline',
+  'step.reorderFrames': 'Reorder frames',
+  'step.frameDuration': 'Frame duration',
+  'step.frameRate': 'Frame rate',
+  'blocked.sprite-too-large': 'There is not enough memory for more layers or frames',
+  'blocked.frame-limit': 'An animation can have 128 frames at most',
+  'blocked.single-frame': 'An animation needs at least one frame',
 
   // Extract palette dialog
   'extract.title': 'Extract palette from an image',
