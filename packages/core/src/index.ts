@@ -66,3 +66,12 @@ export {
   paletteColor,
 } from './domain/palette.js';
 export type { Palette, PaletteColor } from './domain/palette.js';
+export {
+  HARMONY_KINDS,
+  contrastRatio,
+  harmony,
+  relativeLuminance,
+  shadeRamp,
+  wcagLevels,
+} from './domain/color-theory.js';
+export type { HarmonyKind, RampOptions, WcagLevels } from './domain/color-theory.js';
