@@ -45,7 +45,7 @@ test.describe('a browser set to Spanish', () => {
     await expect(page.getByRole('status')).toHaveText('Rehecho: Lápiz');
 
     await page.keyboard.press('ControlOrMeta+e');
-    const dialog = page.getByRole('dialog', { name: 'Exportar PNG' });
+    const dialog = page.getByRole('dialog', { name: 'Exportar' });
     await expect(dialog).toBeVisible();
     await dialog.getByRole('button', { name: 'Cancelar' }).click();
 

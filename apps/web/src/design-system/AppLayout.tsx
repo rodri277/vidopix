@@ -8,12 +8,22 @@ interface Props {
   readonly tools: ReactNode;
   readonly canvas: ReactNode;
   readonly side: ReactNode;
+  readonly timeline: ReactNode;
   readonly status: ReactNode;
   readonly panelsHidden: boolean;
 }
 
 /** Page skeleton: fixed-size bars around the canvas. It only arranges what it is given. */
-export function AppLayout({ menu, options, tools, canvas, side, status, panelsHidden }: Props) {
+export function AppLayout({
+  menu,
+  options,
+  tools,
+  canvas,
+  side,
+  timeline,
+  status,
+  panelsHidden,
+}: Props) {
   const t = useT();
   return (
     <div className={styles.layout} data-panels-hidden={panelsHidden}>
@@ -28,6 +38,9 @@ export function AppLayout({ menu, options, tools, canvas, side, status, panelsHi
       <aside className={styles.side} aria-label={t('layout.side')}>
         {side}
       </aside>
+      <section className={styles.timeline} aria-label={t('timeline.title')}>
+        {timeline}
+      </section>
       <footer className={styles.status}>{status}</footer>
     </div>
   );

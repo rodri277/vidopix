@@ -31,6 +31,7 @@ function indexOf(state: DocumentState, id: string): number {
 export function addLayer(state: DocumentState, ids: IdGenerator): DocumentState {
   const { layers, width, height } = state.sprite;
   if (layers.length >= MAX_LAYERS) return state;
+  const cels = state.sprite.frames.map(() => PixelBuffer.create(width, height));
   const layer: Layer = {
     id: ids.next(),
     name: nextLayerName(layers),
@@ -38,7 +39,8 @@ export function addLayer(state: DocumentState, ids: IdGenerator): DocumentState 
     locked: false,
     opacity: 1,
     blendMode: 'normal',
-    buffer: PixelBuffer.create(width, height),
+    buffer: cels[state.activeFrame] ?? PixelBuffer.create(width, height),
+    cels,
   };
   const above = indexOf(state, state.activeLayerId) + 1;
   const next = [...layers.slice(0, above), layer, ...layers.slice(above)];
@@ -50,11 +52,13 @@ export function duplicateLayer(state: DocumentState, id: string, ids: IdGenerato
   const index = indexOf(state, id);
   const source = layers[index];
   if (!source || layers.length >= MAX_LAYERS) return state;
+  const cels = source.cels.map((cel) => cel.clone());
   const copy: Layer = {
     ...source,
     id: ids.next(),
     name: `${source.name} copy`,
-    buffer: source.buffer.clone(),
+    buffer: cels[state.activeFrame] ?? source.buffer.clone(),
+    cels,
   };
   const next = [...layers.slice(0, index + 1), copy, ...layers.slice(index + 1)];
   return withLayers(state, next, copy.id);

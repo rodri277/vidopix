@@ -9,6 +9,7 @@ import {
   type Color,
   type ColorSlot,
   type EditorSession,
+  type Frame,
   type Layer,
   type Palette,
   type PaletteColor,
@@ -73,6 +74,11 @@ export interface EditorState {
   /** Layers from bottom to top. */
   readonly layers: readonly Layer[];
   readonly activeLayerId: string;
+  /** Frames in playing order, and which one is being edited. */
+  readonly frames: readonly Frame[];
+  readonly activeFrame: number;
+  /** Counts changes to the pixels, so thumbnails know when to redraw. Throttled. */
+  readonly contentRevision: number;
   readonly selection: Rect | null;
   /** Content lifted or pasted that has not been dropped yet. */
   readonly hasFloating: boolean;
@@ -100,6 +106,13 @@ export interface EditorState {
   readonly keyboardCursor: Point | null;
   /** Space is held: dragging pans instead of drawing. */
   readonly panMode: boolean;
+  /** The animation is playing; `playFrame` is the frame on screen. Nothing in the document changes. */
+  readonly playing: boolean;
+  readonly playFrame: number;
+  readonly onionPrevious: boolean;
+  readonly onionNext: boolean;
+  /** 0.1 to 0.8 */
+  readonly onionOpacity: number;
 }
 
 export interface EditorActions {
@@ -168,7 +181,29 @@ export interface EditorActions {
   setCursor(cursor: Point | null): void;
   setKeyboardCursor(cursor: Point | null): void;
   setPanMode(active: boolean): void;
+  setActiveFrame(index: number): void;
+  /** Moves the active frame by a distance, stopping at the ends. */
+  stepFrame(delta: number): void;
+  addFrame(): void;
+  duplicateFrame(): void;
+  deleteFrame(): void;
+  moveFrame(from: number, to: number): void;
+  setFrameDuration(index: number, milliseconds: number): void;
+  /** Gives every frame the duration that plays at this many frames per second. */
+  setFps(fps: number): void;
+  togglePlayback(): void;
+  stopPlayback(): void;
+  /** Called by the player for each frame it shows. */
+  setPlayFrame(index: number): void;
+  toggleOnionPrevious(): void;
+  toggleOnionNext(): void;
+  setOnionOpacity(opacity: number): void;
 }
+
+export const MIN_FPS = 1;
+export const MAX_FPS = 50;
+export const ONION_OPACITY_RANGE = { min: 0.1, max: 0.8, default: 0.4 } as const;
+const CONTENT_REVISION_DELAY = 120;
 
 export type EditorStore = StoreApi<EditorState & EditorActions>;
 
@@ -185,6 +220,7 @@ export function createEditorStore(
   onLanguageChange: (language: Language) => void = () => undefined,
 ): EditorStore {
   let noticeTimer: ReturnType<typeof setTimeout> | undefined;
+  let revisionTimer: ReturnType<typeof setTimeout> | undefined;
   const say = (key: MessageKey, params?: MessageParams): string =>
     translate(store.getState().language, key, params);
   const labelText = (label: string): string => {
@@ -228,6 +264,9 @@ export function createEditorStore(
     spriteVersion: 0,
     layers: session.sprite.layers,
     activeLayerId: session.activeLayer.id,
+    frames: session.sprite.frames,
+    activeFrame: session.document.activeFrame,
+    contentRevision: 0,
     selection: null,
     hasFloating: false,
     palette: session.document.palette,
@@ -254,6 +293,11 @@ export function createEditorStore(
     cursor: null,
     keyboardCursor: null,
     panMode: false,
+    playing: false,
+    playFrame: 0,
+    onionPrevious: false,
+    onionNext: false,
+    onionOpacity: ONION_OPACITY_RANGE.default,
 
     t: (key, params) => translate(get().language, key, params),
     setLanguage: (language) => {
@@ -471,6 +515,69 @@ export function createEditorStore(
     setPanMode: (panMode) => {
       if (get().panMode !== panMode) set({ panMode });
     },
+    setActiveFrame: (index) => {
+      get().stopPlayback();
+      session.cancelStroke();
+      session.document.setActiveFrame(index);
+    },
+    stepFrame: (delta) => {
+      const { activeFrame, frames } = get();
+      const next = Math.min(frames.length - 1, Math.max(0, activeFrame + delta));
+      if (next !== activeFrame) get().setActiveFrame(next);
+    },
+    addFrame: () => {
+      get().stopPlayback();
+      session.cancelStroke();
+      session.document.addFrame();
+    },
+    duplicateFrame: () => {
+      get().stopPlayback();
+      session.cancelStroke();
+      session.document.duplicateFrame();
+    },
+    deleteFrame: () => {
+      get().stopPlayback();
+      session.cancelStroke();
+      session.document.deleteFrame();
+    },
+    moveFrame: (from, to) => {
+      get().stopPlayback();
+      session.cancelStroke();
+      session.document.moveFrame(from, to);
+    },
+    setFrameDuration: (index, milliseconds) => {
+      session.document.setFrameDuration(index, milliseconds);
+    },
+    setFps: (fps) => {
+      if (!Number.isFinite(fps)) return;
+      const clamped = Math.min(MAX_FPS, Math.max(MIN_FPS, fps));
+      session.document.setAllFrameDurations(1000 / clamped);
+    },
+    togglePlayback: () => {
+      if (get().playing) {
+        get().stopPlayback();
+        return;
+      }
+      session.cancelStroke();
+      session.document.commitFloating();
+      set({ playing: true, playFrame: get().activeFrame });
+    },
+    stopPlayback: () => {
+      if (get().playing) set({ playing: false });
+    },
+    setPlayFrame: (playFrame) => {
+      if (get().playFrame !== playFrame) set({ playFrame });
+    },
+    toggleOnionPrevious: () => {
+      set({ onionPrevious: !get().onionPrevious });
+    },
+    toggleOnionNext: () => {
+      set({ onionNext: !get().onionNext });
+    },
+    setOnionOpacity: (opacity) => {
+      const { min, max } = ONION_OPACITY_RANGE;
+      set({ onionOpacity: Math.min(max, Math.max(min, opacity)) });
+    },
   }));
 
   session.on('toolChanged', ({ tool }) => {
@@ -494,6 +601,31 @@ export function createEditorStore(
   session.on('layersChanged', ({ sprite, activeLayerId }) => {
     store.setState({ layers: sprite.layers, activeLayerId });
   });
+  session.on('framesChanged', ({ frames, activeFrame }) => {
+    const previous = store.getState();
+    const changedFrame = previous.activeFrame !== activeFrame && previous.frames.length > 0;
+    const duration = frames[activeFrame]?.duration ?? 0;
+    store.setState({
+      frames,
+      activeFrame,
+      ...(changedFrame
+        ? {
+            announcement: say('timeline.frameInfo', {
+              number: activeFrame + 1,
+              total: frames.length,
+              duration,
+            }),
+          }
+        : {}),
+    });
+  });
+  session.on('documentChanged', () => {
+    if (revisionTimer !== undefined) return;
+    revisionTimer = setTimeout(() => {
+      revisionTimer = undefined;
+      store.setState({ contentRevision: store.getState().contentRevision + 1 });
+    }, CONTENT_REVISION_DELAY);
+  });
   session.on('paletteChanged', ({ palette }) => {
     store.setState({ palette });
   });
@@ -509,6 +641,7 @@ export function createEditorStore(
   session.on('spriteReplaced', ({ sprite }) => {
     const state = store.getState();
     store.setState({
+      playing: false,
       spriteName: sprite.name,
       spriteWidth: sprite.width,
       spriteHeight: sprite.height,

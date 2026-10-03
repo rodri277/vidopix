@@ -25,7 +25,7 @@ function setup(): DocumentState {
   if (!sprite.ok) throw new Error('sprite');
   const layer = sprite.value.layers[0];
   if (!layer) throw new Error('layer');
-  return { sprite: sprite.value, activeLayerId: layer.id, selection: null };
+  return { sprite: sprite.value, activeLayerId: layer.id, activeFrame: 0, selection: null };
 }
 
 const colors = (state: DocumentState): number[] => state.sprite.palette.colors.map((c) => c.color);

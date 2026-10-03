@@ -2,24 +2,26 @@
   display: grid;
   height: 100%;
   grid-template-columns: var(--toolbar-width) minmax(0, 1fr) var(--side-panel-width);
-  grid-template-rows: var(--topbar-height) var(--options-height) minmax(0, 1fr) var(
-      --statusbar-height
-    );
+  grid-template-rows:
+    var(--topbar-height) var(--options-height) minmax(0, 1fr) var(--timeline-height)
+    var(--statusbar-height);
   grid-template-areas:
     'top top top'
     'options options options'
     'tools canvas side'
+    'timeline timeline timeline'
     'status status status';
 }
 
 .layout[data-panels-hidden='true'] {
   grid-template-columns: 0 minmax(0, 1fr) 0;
-  grid-template-rows: var(--topbar-height) 0 minmax(0, 1fr) 0;
+  grid-template-rows: var(--topbar-height) 0 minmax(0, 1fr) 0 0;
 }
 
 .layout[data-panels-hidden='true'] .options,
 .layout[data-panels-hidden='true'] .tools,
 .layout[data-panels-hidden='true'] .side,
+.layout[data-panels-hidden='true'] .timeline,
 .layout[data-panels-hidden='true'] .status {
   visibility: hidden;
   overflow: hidden;
@@ -29,8 +31,16 @@
 .options,
 .tools,
 .side,
+.timeline,
 .status {
   background: var(--bg-panel);
+}
+
+.timeline {
+  grid-area: timeline;
+  min-width: 0;
+  overflow: hidden;
+  border-top: 1px solid var(--border);
 }
 
 .top {

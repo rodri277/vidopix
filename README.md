@@ -4,7 +4,7 @@
 
 A pixel art editor that runs in your browser: no install, no account, and a built-in palette generator.
 
-> **Status:** v1.0.0. Animation is planned for the next phase. The live demo link and screenshots are added once the app is deployed.
+> **Status:** v1.1.0. The live demo link and screenshots are added once the app is deployed.
 
 ## Goals
 
@@ -25,6 +25,7 @@ A pixel art editor that runs in your browser: no install, no account, and a buil
 - Saved automatically in your browser (nothing is uploaded), recent projects, `.vidopix` files and share links that carry the sprite inside the URL.
 - Installable and usable offline.
 - The interface in English and Spanish.
+- Animation: a timeline with frames of any duration, looping playback, onion skin, and export as animated GIF or as a spritesheet with a JSON file of coordinates.
 - PNG export at 1x to 32x.
 - Fully usable from the keyboard: arrow keys move a pixel cursor, hold Enter to draw.
 
@@ -32,13 +33,15 @@ A pixel art editor that runs in your browser: no install, no account, and a buil
 
 Numbers from this repository's own benchmarks and E2E run on the author's machine (Apple silicon Mac, headless Chromium). They are not estimates; run `pnpm bench` and `pnpm e2e` to reproduce them on yours.
 
-| Metric                                         | Target       | Measured                     |
-| ---------------------------------------------- | ------------ | ---------------------------- |
-| Flood fill 1024×1024, algorithm only           | < 50 ms      | about 12 ms                  |
-| Flood fill 1024×1024, including the undo patch | < 50 ms      | about 34 ms                  |
-| Frame time while drawing on 256×256            | 60 fps       | 16.7 ms mean (vsync-limited) |
-| 500 strokes undone and redone on 256×256       | within 64 MB | passes (unit test)           |
-| Initial JavaScript (gzip)                      | < 150 kB     | 88 kB                        |
+| Metric                                         | Target       | Measured                              |
+| ---------------------------------------------- | ------------ | ------------------------------------- |
+| Flood fill 1024×1024, algorithm only           | < 50 ms      | about 12 ms                           |
+| Flood fill 1024×1024, including the undo patch | < 50 ms      | about 34 ms                           |
+| Frame time while drawing on 256×256            | 60 fps       | 16.7 ms mean (vsync-limited)          |
+| 500 strokes undone and redone on 256×256       | within 64 MB | passes (unit test)                    |
+| Playing 32 frames of 64×64                     | 60 fps       | 16.7 ms mean (vsync-limited)          |
+| GIF of 32 frames of 64×64, in a worker         | responsive   | about 50 ms to encode (exact palette) |
+| Initial JavaScript (gzip)                      | < 150 kB     | 128 kB                                |
 
 Lighthouse was measured with `pnpm lighthouse` on the production build with the desktop preset. The page is designed for screens at least 768 px wide, so a phone-sized mobile run is not a target.
 
@@ -46,7 +49,8 @@ Lighthouse was measured with `pnpm lighthouse` on the production build with the 
 
 - The layout needs at least 768 px of width; phones are not supported, tablets are.
 - Only Chromium is covered by the automated tests. Safari and Firefox need a manual check, especially for installing the app, the system clipboard, `CompressionStream` links and touch.
-- A project can be at most 1024×1024 pixels, 64 layers and 20 MB. A link can carry about 6000 characters, which is plenty for flat-color pixel art and not enough for large or noisy sprites.
+- A project can be at most 1024×1024 pixels, 64 layers, 128 frames and 20 MB (and 256 MB of pixels in memory). A link can carry about 6000 characters, which is plenty for flat-color pixel art and not enough for large or noisy sprites.
+- A GIF has a single palette of 256 colors and no partial transparency, so an image with more colors is reduced and pixels more than half transparent become opaque or transparent. Quantizing thousands of colors takes about half a second.
 - Details of errors that come from reading palette or project files are technical and stay in English.
 
 ## Stack

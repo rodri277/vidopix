@@ -78,6 +78,15 @@ export const SHORTCUT_GROUPS: readonly ShortcutGroup[] = [
     ],
   },
   {
+    title: 'shortcuts.group.animation',
+    entries: [
+      { label: 'animation.previousFrame', keys: ',', input: { key: ',' } },
+      { label: 'animation.nextFrame', keys: '.', input: { key: '.' } },
+      { label: 'animation.play', keys: 'P', input: { key: 'p' } },
+      { label: 'shortcuts.reorderFrame', keys: 'Alt + ← →' },
+    ],
+  },
+  {
     title: 'shortcuts.group.file',
     entries: [
       { label: 'file.new', keys: 'Ctrl+N', input: { key: 'n', ...mod } },

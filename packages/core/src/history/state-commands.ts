@@ -1,4 +1,5 @@
 import type { DocumentState } from '../document/document-state.js';
+import { setActiveFrame } from '../document/frame-ops.js';
 import { unionRects, type Rect } from '../domain/rect.js';
 import type { Command } from './command.js';
 
@@ -66,5 +67,48 @@ export class CompoundCommand implements Command {
     let dirty: Rect | null = null;
     for (const command of [...this.commands].reverse()) dirty = unionRects(dirty, command.revert());
     return dirty;
+  }
+}
+
+/**
+ * Runs a command on the frame it was made in: undoing a stroke drawn on frame 3 first goes back to
+ * frame 3, so the change is visible. Frames are found by id because they can be reordered.
+ */
+export class FrameScopedCommand implements Command {
+  readonly label: string;
+  readonly sizeBytes: number;
+
+  constructor(
+    private readonly inner: Command,
+    private readonly holder: DocumentHolder,
+    private readonly frameId: string | undefined,
+  ) {
+    this.label = inner.label;
+    this.sizeBytes = inner.sizeBytes;
+  }
+
+  apply(): Rect | null {
+    const switched = this.enter();
+    const dirty = this.inner.apply();
+    return switched ? this.whole() : dirty;
+  }
+
+  revert(): Rect | null {
+    const switched = this.enter();
+    const dirty = this.inner.revert();
+    return switched ? this.whole() : dirty;
+  }
+
+  private enter(): boolean {
+    const { frames } = this.holder.state.sprite;
+    const index = frames.findIndex((frame) => frame.id === this.frameId);
+    if (index < 0 || index === this.holder.state.activeFrame) return false;
+    this.holder.state = setActiveFrame(this.holder.state, index);
+    return true;
+  }
+
+  private whole(): Rect {
+    const { width, height } = this.holder.state.sprite;
+    return { x: 0, y: 0, width, height };
   }
 }

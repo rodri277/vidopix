@@ -6,6 +6,7 @@ import { Announcer } from '../features/a11y/Announcer';
 import { CanvasView } from '../features/canvas/CanvasView';
 import { ColorPanel } from '../features/color/ColorPanel';
 import { LayersPanel } from '../features/layers/LayersPanel';
+import { TimelinePanel } from '../features/timeline/TimelinePanel';
 import { GeneratePanel } from '../features/palette/GeneratePanel';
 import { PalettePanel } from '../features/palette/PalettePanel';
 import { Dialogs } from '../features/dialogs/Dialogs';
@@ -43,6 +44,7 @@ function Editor({ session, store, onUpdate }: Omit<Props, 'services'>) {
         options={<ToolOptionsBar />}
         tools={<Toolbar />}
         canvas={<CanvasView />}
+        timeline={<TimelinePanel />}
         side={
           <>
             <LayersPanel />

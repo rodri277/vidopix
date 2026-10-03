@@ -39,6 +39,6 @@ test('dialogs and menus are accessible too', async ({ page }) => {
   await expect(page.getByRole('dialog')).toBeHidden();
 
   await page.keyboard.press('ControlOrMeta+e');
-  await expect(page.getByRole('dialog', { name: 'Export PNG' })).toBeVisible();
+  await expect(page.getByRole('dialog', { name: 'Export' })).toBeVisible();
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
 });

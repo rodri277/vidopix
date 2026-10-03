@@ -115,7 +115,17 @@ export function useGlobalShortcuts(
           state.openDialog('export');
           break;
         case 'cancel':
+          state.stopPlayback();
           session.cancelAction();
+          break;
+        case 'previous-frame':
+          state.stepFrame(-1);
+          break;
+        case 'next-frame':
+          state.stepFrame(1);
+          break;
+        case 'toggle-playback':
+          state.togglePlayback();
           break;
         case 'select-all':
           state.selectAll();

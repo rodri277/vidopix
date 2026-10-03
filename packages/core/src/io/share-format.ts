@@ -6,8 +6,16 @@ import {
   paletteColor,
   type PaletteColor,
 } from '../domain/palette.js';
-import { MAX_CANVAS_SIZE } from '../domain/pixel-buffer.js';
-import type { Layer, Sprite } from '../domain/sprite.js';
+import { MAX_CANVAS_SIZE, type PixelBuffer } from '../domain/pixel-buffer.js';
+import {
+  DEFAULT_FRAME_DURATION,
+  MAX_FRAMES,
+  MAX_FRAME_DURATION,
+  MIN_FRAME_DURATION,
+  type Frame,
+  type Layer,
+  type Sprite,
+} from '../domain/sprite.js';
 import type { IdGenerator } from '../ports/id-generator.js';
 import { err, ok, type Result } from '../result.js';
 import { base64ToBytes, bytesToBase64, utf8Decode, utf8Encode } from './bytes.js';
@@ -19,7 +27,8 @@ import { bytesToPixels, pixelsToBytes } from './pixel-bytes.js';
  */
 const MAGIC_0 = 0x56; // V
 const MAGIC_1 = 0x50; // P
-const VERSION = 1;
+/** Version 1 had one image per layer; version 2 adds frames. Both can be read. */
+const VERSION = 2;
 const MAX_LAYERS = 64;
 const NAME_BYTES = 255;
 
@@ -86,12 +95,14 @@ export function encodeShare(sprite: Sprite): Uint8Array {
     out.bytes(Uint8Array.of(color & 0xff, (color >>> 8) & 0xff, (color >>> 16) & 0xff));
     out.text(name ?? '');
   }
+  out.byte(sprite.frames.length);
+  for (const frame of sprite.frames) out.uint16(frame.duration);
   out.byte(sprite.layers.length);
   for (const layer of sprite.layers) {
     out.byte((layer.visible ? 1 : 0) | (layer.locked ? 2 : 0));
     out.byte(Math.round(layer.opacity * 255));
     out.text(layer.name);
-    out.bytes(pixelsToBytes(layer.buffer));
+    for (const cel of layer.cels) out.bytes(pixelsToBytes(cel));
   }
   return out.finish();
 }
@@ -142,6 +153,7 @@ export function decodeShare(data: Uint8Array, ids: IdGenerator): Result<Sprite, 
     return failure('newer-version', 'This link was made by a newer version of Vidopix');
   }
 
+  const version = data[2] ?? 1;
   try {
     const input = new Reader(data.subarray(3));
     const name = input.text();
@@ -161,12 +173,28 @@ export function decodeShare(data: Uint8Array, ids: IdGenerator): Result<Sprite, 
       colors.push(paletteColor(packRgba(r, g, b, 255), input.text()));
     }
 
+    const durations: number[] = [DEFAULT_FRAME_DURATION];
+    if (version >= 2) {
+      const frameCount = input.byte();
+      if (frameCount < 1 || frameCount > MAX_FRAMES) {
+        return failure('invalid', 'The number of frames in this link is not valid');
+      }
+      durations.length = 0;
+      for (let i = 0; i < frameCount; i++) {
+        const duration = input.uint16();
+        if (duration < MIN_FRAME_DURATION || duration > MAX_FRAME_DURATION) {
+          return failure('invalid', 'A frame duration in this link is not valid');
+        }
+        durations.push(duration);
+      }
+    }
+
     const layerCount = input.byte();
     if (layerCount < 1 || layerCount > MAX_LAYERS) {
       return failure('invalid', 'The number of layers in this link is not valid');
     }
     const layerBytes = width * height * 4;
-    if (layerBytes * layerCount > MAX_SHARE_DECODED_BYTES) {
+    if (layerBytes * layerCount * durations.length > MAX_SHARE_DECODED_BYTES) {
       return failure('too-large', 'This sprite is too large to open from a link');
     }
 
@@ -176,6 +204,11 @@ export function decodeShare(data: Uint8Array, ids: IdGenerator): Result<Sprite, 
       const flags = input.byte();
       const opacity = input.byte() / 255;
       const layerName = input.text();
+      const cels: PixelBuffer[] = durations.map(() =>
+        bytesToPixels(input.take(layerBytes), width, height),
+      );
+      const [first] = cels;
+      if (!first) return failure('invalid', 'This link is damaged');
       layers.push({
         id: ids.next(),
         name: layerName === '' ? `Layer ${String(i + 1)}` : layerName,
@@ -183,7 +216,8 @@ export function decodeShare(data: Uint8Array, ids: IdGenerator): Result<Sprite, 
         locked: (flags & 2) !== 0,
         opacity,
         blendMode: 'normal',
-        buffer: bytesToPixels(input.take(layerBytes), width, height),
+        buffer: first,
+        cels,
       });
     }
 
@@ -192,7 +226,16 @@ export function decodeShare(data: Uint8Array, ids: IdGenerator): Result<Sprite, 
       paletteName.slice(0, MAX_PALETTE_NAME_LENGTH) || 'Palette',
       colors,
     );
-    return ok({ id: spriteId, name: name || 'Untitled', width, height, layers, palette });
+    const frames: Frame[] = durations.map((duration) => ({ id: ids.next(), duration }));
+    return ok({
+      id: spriteId,
+      name: name || 'Untitled',
+      width,
+      height,
+      layers,
+      frames,
+      palette,
+    });
   } catch (error) {
     if (error instanceof Truncated) return failure('truncated', 'This link is incomplete');
     return failure('invalid', 'This link is damaged');

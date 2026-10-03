@@ -1,17 +1,32 @@
-import { blendPixel, compositePixel, compositeSprite, scaleAlpha } from '../domain/compositing.js';
+import { blendPixel, compositeFrame, compositePixel, scaleAlpha } from '../domain/compositing.js';
 import type { Color } from '../domain/color.js';
 import { PixelBuffer } from '../domain/pixel-buffer.js';
 import { intersectRects, rectContains, rectsEqual, unionRects, type Rect } from '../domain/rect.js';
 import { cleanName, type Palette, type PaletteColor } from '../domain/palette.js';
-import type { Layer, Sprite } from '../domain/sprite.js';
+import { MAX_FRAMES, type Frame, type Layer, type Sprite } from '../domain/sprite.js';
 import { PixelPatchCommand, type Command } from '../history/command.js';
 import { DEFAULT_HISTORY_BUDGET_BYTES, HistoryManager } from '../history/history-manager.js';
 import { PatchRecorder } from '../history/patch-recorder.js';
 import { revertPatch, type PixelPatch } from '../history/pixel-patch.js';
-import { CompoundCommand, StateCommand, type DocumentHolder } from '../history/state-commands.js';
+import {
+  CompoundCommand,
+  FrameScopedCommand,
+  StateCommand,
+  type DocumentHolder,
+} from '../history/state-commands.js';
 import type { IdGenerator } from '../ports/id-generator.js';
 import { Emitter } from '../session/emitter.js';
 import { activeLayerOf, findLayer, type DocumentState } from './document-state.js';
+import {
+  addFrame,
+  canGrow,
+  deleteFrame,
+  duplicateFrame,
+  moveFrame,
+  setActiveFrame,
+  setAllFrameDurations,
+  setFrameDuration,
+} from './frame-ops.js';
 import {
   addPaletteColor,
   appendPaletteColors,
@@ -44,7 +59,10 @@ export type BlockReason =
   | 'nothing-selected'
   | 'single-layer'
   | 'color-in-palette'
-  | 'palette-full';
+  | 'palette-full'
+  | 'sprite-too-large'
+  | 'frame-limit'
+  | 'single-frame';
 
 /** Pixels lifted from a layer or pasted, held above the document until they are dropped. */
 export interface Floating {
@@ -62,6 +80,8 @@ export interface DocumentEvents {
   selectionChanged: { selection: Rect | null };
   paletteChanged: { palette: Palette };
   nameChanged: { name: string };
+  /** Frames were added, removed, reordered or retimed, or the active frame changed. */
+  framesChanged: { frames: readonly Frame[]; activeFrame: number };
   floatingChanged: { floating: Floating | null };
   /** The whole document was replaced (new sprite). */
   spriteReplaced: { sprite: Sprite };
@@ -95,8 +115,14 @@ function fullRect(sprite: Sprite): Rect {
   return { x: 0, y: 0, width: sprite.width, height: sprite.height };
 }
 
+/** Memory of one layer across all frames. */
 function bufferBytes(sprite: Sprite): number {
-  return sprite.width * sprite.height * BYTES_PER_PIXEL;
+  return sprite.width * sprite.height * BYTES_PER_PIXEL * sprite.frames.length;
+}
+
+/** Memory of one frame across all layers. */
+function frameBytes(sprite: Sprite): number {
+  return sprite.width * sprite.height * BYTES_PER_PIXEL * sprite.layers.length;
 }
 
 /**
@@ -118,7 +144,7 @@ export class DocumentEditor {
   ) {
     const first = sprite.layers[0];
     if (!first) throw new Error('A sprite needs at least one layer');
-    this.holder = { state: { sprite, activeLayerId: first.id, selection: null } };
+    this.holder = { state: { sprite, activeLayerId: first.id, activeFrame: 0, selection: null } };
     this.history = new HistoryManager(budgetBytes);
   }
 
@@ -177,10 +203,14 @@ export class DocumentEditor {
     this.opacityBaseline = null;
     const first = sprite.layers[0];
     if (!first) throw new Error('A sprite needs at least one layer');
-    this.holder.state = { sprite, activeLayerId: first.id, selection: null };
+    this.holder.state = setActiveFrame(
+      { sprite, activeLayerId: first.id, activeFrame: 0, selection: null },
+      0,
+    );
     this.history = new HistoryManager(this.budgetBytes);
     this.events.emit('spriteReplaced', { sprite });
     this.emitLayers();
+    this.emitFrames();
     this.events.emit('selectionChanged', { selection: null });
     this.events.emit('paletteChanged', { palette: sprite.palette });
     this.events.emit('nameChanged', { name: sprite.name });
@@ -193,7 +223,7 @@ export class DocumentEditor {
   /** Records a finished pixel edit on the active layer. */
   commitPixels(label: string, patch: PixelPatch | null): void {
     if (!patch) return;
-    this.history.record(new PixelPatchCommand(label, this.activeLayer.buffer, patch));
+    this.history.record(this.pixelCommand(label, this.activeLayer.buffer, patch));
     this.emitHistory('record', label);
   }
 
@@ -212,10 +242,12 @@ export class DocumentEditor {
   }
 
   addLayer(): void {
+    if (!this.requireRoom(1, 0)) return;
     this.structural('Add layer', (state) => addLayer(state, this.ids), bufferBytes(this.sprite));
   }
 
   duplicateLayer(id: string = this.state.activeLayerId): void {
+    if (!this.requireRoom(1, 0)) return;
     this.structural(
       'Duplicate layer',
       (state) => duplicateLayer(state, id, this.ids),
@@ -299,17 +331,28 @@ export class DocumentEditor {
     const before = this.state;
     const commands: Command[] = [];
     if (upper.visible) {
-      const recorder = new PatchRecorder(lower.buffer);
-      for (let y = 0; y < upper.buffer.height; y++) {
-        for (let x = 0; x < upper.buffer.width; x++) {
-          const source = scaleAlpha(upper.buffer.get(x, y), upper.opacity);
-          if (source >>> 24 !== 0)
-            recorder.setPixel(x, y, blendPixel(source, lower.buffer.get(x, y)));
+      this.sprite.frames.forEach((frame, index) => {
+        const source = upper.cels[index];
+        const target = lower.cels[index];
+        if (!source || !target) return;
+        const recorder = new PatchRecorder(target);
+        for (let y = 0; y < source.height; y++) {
+          for (let x = 0; x < source.width; x++) {
+            const pixel = scaleAlpha(source.get(x, y), upper.opacity);
+            if (pixel >>> 24 !== 0) recorder.setPixel(x, y, blendPixel(pixel, target.get(x, y)));
+          }
         }
-      }
-      this.markDirty(recorder.takeDirty());
-      const patch = recorder.finish();
-      if (patch) commands.push(new PixelPatchCommand('Merge down', lower.buffer, patch));
+        this.markDirty(recorder.takeDirty());
+        const patch = recorder.finish();
+        if (patch)
+          commands.push(
+            new FrameScopedCommand(
+              new PixelPatchCommand('Merge down', target, patch),
+              this.holder,
+              frame.id,
+            ),
+          );
+      });
     }
 
     const after = deleteLayer(before, upper.id);
@@ -331,6 +374,8 @@ export class DocumentEditor {
     if (sprite.layers.length <= 1) return;
     const bottom = sprite.layers.find((layer) => layer.visible) ?? sprite.layers[0];
     if (!bottom) return;
+    const state0 = this.state;
+    const cels = sprite.frames.map((_, index) => compositeFrame(sprite, index));
     const merged: Layer = {
       id: this.ids.next(),
       name: bottom.name,
@@ -338,7 +383,8 @@ export class DocumentEditor {
       locked: false,
       opacity: 1,
       blendMode: 'normal',
-      buffer: compositeSprite(sprite),
+      buffer: cels[state0.activeFrame] ?? PixelBuffer.create(sprite.width, sprite.height),
+      cels,
     };
     this.structural(
       'Flatten image',
@@ -349,6 +395,64 @@ export class DocumentEditor {
       }),
       bufferBytes(sprite) * (sprite.layers.length + 1),
     );
+  }
+
+  // ---- Frames ----
+
+  get activeFrame(): number {
+    return this.state.activeFrame;
+  }
+
+  /** Shows another frame. Not a history step; drops any floating content first. */
+  setActiveFrame(index: number): void {
+    this.commitFloating();
+    const next = setActiveFrame(this.state, index);
+    if (next === this.state) return;
+    this.applyState(next);
+  }
+
+  addFrame(afterIndex?: number): void {
+    if (!this.requireRoom(0, 1)) return;
+    this.structural(
+      'Add frame',
+      (state) => addFrame(state, this.ids, afterIndex),
+      frameBytes(this.sprite),
+    );
+  }
+
+  duplicateFrame(index: number = this.state.activeFrame): void {
+    if (!this.requireRoom(0, 1)) return;
+    this.structural(
+      'Duplicate frame',
+      (state) => duplicateFrame(state, this.ids, index),
+      frameBytes(this.sprite),
+    );
+  }
+
+  deleteFrame(index: number = this.state.activeFrame): void {
+    if (this.sprite.frames.length <= 1) {
+      this.events.emit('actionBlocked', { reason: 'single-frame' });
+      return;
+    }
+    this.structural('Delete frame', (state) => deleteFrame(state, index), frameBytes(this.sprite));
+  }
+
+  moveFrame(from: number, to: number): void {
+    this.structural('Reorder frames', (state) => moveFrame(state, from, to));
+  }
+
+  setFrameDuration(index: number, milliseconds: number): void {
+    this.structural(
+      'Frame duration',
+      (state) => setFrameDuration(state, index, milliseconds),
+      0,
+      false,
+    );
+  }
+
+  /** Gives every frame the same duration, for example from a frames-per-second field. */
+  setAllFrameDurations(milliseconds: number): void {
+    this.structural('Frame rate', (state) => setAllFrameDurations(state, milliseconds), 0, false);
   }
 
   // ---- Sprite name ----
@@ -420,7 +524,7 @@ export class DocumentEditor {
 
   /**
    * Replaces every pixel of exactly `from` with `to` on all layers that are not locked, hidden
-   * ones included, inside the selection when there is one. One undo step. Returns how many
+   * ones included, in every frame, inside the selection when there is one. One undo step. Returns how many
    * pixels changed.
    */
   replaceColor(from: Color, to: Color): number {
@@ -433,19 +537,24 @@ export class DocumentEditor {
 
     for (const layer of this.sprite.layers) {
       if (layer.locked) continue;
-      const { buffer } = layer;
-      const recorder = new PatchRecorder(buffer, clip);
-      for (let y = 0; y < buffer.height; y++) {
-        for (let x = 0; x < buffer.width; x++) {
-          if (buffer.data[y * buffer.width + x] !== from) continue;
-          if (clip && !rectContains(clip, x, y)) continue;
-          recorder.setPixel(x, y, to);
-          changed++;
+      this.sprite.frames.forEach((frame, index) => {
+        const buffer = layer.cels[index];
+        if (!buffer) return;
+        const recorder = new PatchRecorder(buffer, clip);
+        for (let y = 0; y < buffer.height; y++) {
+          for (let x = 0; x < buffer.width; x++) {
+            if (buffer.data[y * buffer.width + x] !== from) continue;
+            if (clip && !rectContains(clip, x, y)) continue;
+            recorder.setPixel(x, y, to);
+            changed++;
+          }
         }
-      }
-      dirty = unionRects(dirty, recorder.takeDirty());
-      const patch = recorder.finish();
-      if (patch) commands.push(new PixelPatchCommand('Replace color', buffer, patch));
+        dirty = unionRects(dirty, recorder.takeDirty());
+        const patch = recorder.finish();
+        if (patch) {
+          commands.push(this.pixelCommand('Replace color', buffer, patch, frame.id));
+        }
+      });
     }
 
     if (commands.length === 0) return 0;
@@ -646,7 +755,7 @@ export class DocumentEditor {
       ? null
       : intersectRects(this.floatRect(floating), fullRect(this.sprite));
     const commands: Command[] = [];
-    if (patch) commands.push(new PixelPatchCommand(float.label, buffer, patch));
+    if (patch) commands.push(this.pixelCommand(float.label, buffer, patch));
     if (!rectsEqual(float.selectionBefore, finalSelection)) {
       commands.push(
         new StateCommand(
@@ -745,6 +854,12 @@ export class DocumentEditor {
     ) {
       this.emitLayers();
     }
+    if (
+      current.sprite.frames !== previous.sprite.frames ||
+      current.activeFrame !== previous.activeFrame
+    ) {
+      this.emitFrames();
+    }
     if (current.sprite.name !== previous.sprite.name) {
       this.events.emit('nameChanged', { name: current.sprite.name });
     }
@@ -783,6 +898,33 @@ export class DocumentEditor {
     return pixels;
   }
 
+  /** A pixel patch bound to a frame, so undoing it shows the frame it belongs to. */
+  private pixelCommand(
+    label: string,
+    buffer: PixelBuffer,
+    patch: PixelPatch,
+    frameId: string | undefined = this.sprite.frames[this.state.activeFrame]?.id,
+  ): Command {
+    return new FrameScopedCommand(
+      new PixelPatchCommand(label, buffer, patch),
+      this.holder,
+      frameId,
+    );
+  }
+
+  /** Whether `layers` more layers and `frames` more frames fit in memory and in the frame limit. */
+  private requireRoom(layers: number, frames: number): boolean {
+    if (frames > 0 && this.sprite.frames.length >= MAX_FRAMES) {
+      this.events.emit('actionBlocked', { reason: 'frame-limit' });
+      return false;
+    }
+    if (!canGrow(this.state, layers, frames)) {
+      this.events.emit('actionBlocked', { reason: 'sprite-too-large' });
+      return false;
+    }
+    return true;
+  }
+
   private requireEditable(): boolean {
     const layer = this.activeLayer;
     if (layer.locked) {
@@ -800,6 +942,13 @@ export class DocumentEditor {
     this.events.emit('layersChanged', {
       sprite: this.sprite,
       activeLayerId: this.state.activeLayerId,
+    });
+  }
+
+  private emitFrames(): void {
+    this.events.emit('framesChanged', {
+      frames: this.sprite.frames,
+      activeFrame: this.state.activeFrame,
     });
   }
 

@@ -68,8 +68,19 @@ export function CanvasView() {
       };
     };
 
+    const syncAnimation = (): void => {
+      const state = store.getState();
+      renderer.setPlaybackFrame(state.playing ? state.playFrame : null);
+      renderer.setOnion({
+        previous: state.onionPrevious,
+        next: state.onionNext,
+        opacity: state.onionOpacity,
+      });
+    };
+
     const sync = (): void => {
       const state = store.getState();
+      syncAnimation();
       renderer.setViewport(state.viewport);
       renderer.setGridVisible(state.showGrid);
       renderer.setCursor(cursorShape());
@@ -87,6 +98,15 @@ export function CanvasView() {
         state.options !== previous.options
       ) {
         renderer.setCursor(cursorShape());
+      }
+      if (
+        state.playing !== previous.playing ||
+        state.playFrame !== previous.playFrame ||
+        state.onionPrevious !== previous.onionPrevious ||
+        state.onionNext !== previous.onionNext ||
+        state.onionOpacity !== previous.onionOpacity
+      ) {
+        syncAnimation();
       }
       previous = state;
     });
@@ -126,6 +146,8 @@ export function CanvasView() {
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>): void => {
     const arrow = ARROWS[event.key];
     const state = store.getState();
+    // The picture on screen is a playing animation: nothing can be drawn or moved until it stops.
+    if (state.playing && (event.key === 'Enter' || (arrow && state.tool === 'move'))) return;
     if (state.hasFloating && event.key === 'Enter') {
       event.preventDefault();
       state.commitFloating();

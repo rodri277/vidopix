@@ -2,6 +2,23 @@
 
 All notable changes to this project are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses [Semantic Versioning](https://semver.org/).
 
+## [1.1.0] - 2026-10-03
+
+### Added
+
+- Animation. Each layer has one image per frame; a timeline panel under the canvas adds, duplicates, deletes and reorders frames (buttons, Alt+arrows or drag) and edits the duration of each one in milliseconds. A frames-per-second field sets all durations at once (ADR 016).
+- Looping playback that respects every frame's duration, with `P` to play and pause and `,` and `.` to step. Playing never changes the document or the history.
+- Onion skin: the previous frame tinted red and the next one blue behind the current frame, switched on separately, with adjustable opacity.
+- Export an animated GIF, encoded in a Web Worker with progress and cancel: exact palette when the colors fit, quantized otherwise, 1-bit transparency, each frame's own duration, looping forever (ADR 017).
+- Export a spritesheet as a PNG plus a JSON file with the position and duration of every frame, in a grid with a chosen number of columns.
+- Layer operations (add, duplicate, merge down, flatten, replace color) work on every frame, and undo returns to the frame an edit was made in.
+- Limits of 128 frames and 256 MB of pixels per sprite, refused with a message.
+
+### Changed
+
+- `.vidopix` files move to schema version 2 and share links to format 2. Files and links made by 1.0.0 still open, as a one-frame animation.
+- The export dialog is now "Export" and offers PNG, animated GIF and spritesheet.
+
 ## [1.0.0] - 2026-10-03
 
 ### Added

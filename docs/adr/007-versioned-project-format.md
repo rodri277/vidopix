@@ -1,7 +1,7 @@
 # ADR 007: A versioned project format with migrations
 
 - Status: Accepted
-- Phase: 4
+- Phase: 4 (schema version 2 added in Phase 5, see ADR 016)
 
 ## Context
 
@@ -22,5 +22,6 @@ Projects are saved in the browser, downloaded as files and opened again, possibl
 
 ## Consequences
 
+- Version 2 (Phase 5) replaces each layer's `pixels` with a list of `cels`, one per frame, and adds `frames`; `MIGRATIONS[1]` turns a version 1 file into a one-frame animation.
 - Changing the schema means bumping `PROJECT_SCHEMA_VERSION` and adding one migration step with a test.
 - Base64 makes files about a third larger than the raw pixels; a 256×256 project with eight layers is around 2 MB.

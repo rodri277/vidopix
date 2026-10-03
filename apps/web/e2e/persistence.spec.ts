@@ -71,7 +71,7 @@ test('a project saved to a file opens again exactly', async ({ page }) => {
   const download = await downloadPromise;
   expect(download.suggestedFilename()).toBe('Untitled.vidopix');
   const text = await readFile(await download.path(), 'utf8');
-  expect(JSON.parse(text)).toMatchObject({ format: 'vidopix', schemaVersion: 1 });
+  expect(JSON.parse(text)).toMatchObject({ format: 'vidopix', schemaVersion: 2 });
 
   // Start something else, then open the file.
   await page.keyboard.press('ControlOrMeta+n');

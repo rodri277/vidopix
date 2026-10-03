@@ -18,12 +18,21 @@ function layer(buffer: PixelBuffer, overrides: Partial<Layer> = {}): Layer {
     opacity: 1,
     blendMode: 'normal',
     buffer,
+    cels: [buffer],
     ...overrides,
   };
 }
 
 function spriteOf(width: number, height: number, ...layers: Layer[]): Sprite {
-  return { id: 's', name: 'Test', width, height, layers, palette: createPalette('p') };
+  return {
+    id: 's',
+    name: 'Test',
+    width,
+    height,
+    layers,
+    frames: [{ id: 'f', duration: 100 }],
+    palette: createPalette('p'),
+  };
 }
 
 describe('exportSprite', () => {

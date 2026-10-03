@@ -1,6 +1,8 @@
 import {
   PixelBuffer,
+  compositeFrame,
   compositeRegion,
+  packRgba,
   screenToDocument,
   unionRects,
   type EditorSession,
@@ -30,6 +32,16 @@ const GRID_MIN_SCALE = 8;
 const ANTS_INTERVAL_MS = 120;
 const ANTS_DASH = 4;
 const CHECKER_CELL_CSS_PX = 8;
+/** Onion skin colors: what came before is tinted red, what comes next blue. */
+const ONION_PREVIOUS = packRgba(255, 64, 64, 255);
+const ONION_NEXT = packRgba(64, 128, 255, 255);
+
+export interface OnionSettings {
+  readonly previous: boolean;
+  readonly next: boolean;
+  /** 0 to 1 */
+  readonly opacity: number;
+}
 
 function context2d(canvas: HTMLCanvasElement | OffscreenCanvas): CanvasRenderingContext2D {
   const context = canvas.getContext('2d');
@@ -60,6 +72,17 @@ export class CanvasRenderer {
   private previewPixels: Uint32Array<ArrayBuffer> = new Uint32Array(1);
   private previewIndices: readonly number[] = [];
   private previewActive = false;
+
+  /** Neighboring frames drawn as tinted ghosts behind the active one. */
+  private readonly onionCanvas = document.createElement('canvas');
+  private onionContext = context2d(this.onionCanvas);
+  private onionPixels: Uint32Array<ArrayBuffer> = new Uint32Array(1);
+  private onionImage = new ImageData(1, 1);
+  private onion: OnionSettings = { previous: false, next: false, opacity: 0.4 };
+  private onionDirty = false;
+  private onionVisible = false;
+  /** While the animation plays, the frame on screen; null when editing. */
+  private playbackFrame: number | null = null;
 
   private checker: CanvasPattern | null = null;
   private checkerDpr = 0;
@@ -95,8 +118,15 @@ export class CanvasRenderer {
       session.on('documentChanged', ({ dirty }) => {
         this.invalidateDocument(dirty);
       }),
+      session.on('layersChanged', () => {
+        this.refreshOnion();
+      }),
+      session.on('framesChanged', () => {
+        this.refreshOnion();
+      }),
       session.on('spriteReplaced', () => {
         this.resetSource();
+        this.invalidateOnion();
         this.fullDocument = true;
         this.gridDirty = true;
         this.overlayDirty = true;
@@ -175,6 +205,28 @@ export class CanvasRenderer {
     this.schedule();
   }
 
+  /** Shows a frame other than the active one (for playback), or null to go back to editing. */
+  setPlaybackFrame(frame: number | null): void {
+    if (this.playbackFrame === frame) return;
+    this.playbackFrame = frame;
+    this.recomposite();
+    this.invalidateOnion();
+    this.fullDocument = true;
+    this.schedule();
+  }
+
+  setOnion(settings: OnionSettings): void {
+    if (
+      this.onion.previous === settings.previous &&
+      this.onion.next === settings.next &&
+      this.onion.opacity === settings.opacity
+    ) {
+      return;
+    }
+    this.onion = settings;
+    this.invalidateOnion();
+  }
+
   setCursor(cursor: CursorShape | null): void {
     this.cursor = cursor;
     this.overlayDirty = true;
@@ -240,13 +292,71 @@ export class CanvasRenderer {
     this.previewIndices = [];
     this.previewActive = false;
 
-    const whole = { x: 0, y: 0, width, height };
-    compositeRegion(this.session.sprite, this.composite, whole);
+    this.onionCanvas.width = width;
+    this.onionCanvas.height = height;
+    this.onionContext = context2d(this.onionCanvas);
+    this.onionPixels = new Uint32Array(width * height);
+    this.onionImage = new ImageData(new Uint8ClampedArray(this.onionPixels.buffer), width, height);
+
+    this.recomposite();
+  }
+
+  private compose(region: Rect): void {
+    compositeRegion(this.session.sprite, this.composite, region, this.playbackFrame ?? undefined);
+  }
+
+  private recomposite(): void {
+    const { width, height } = this.composite;
+    this.compose({ x: 0, y: 0, width, height });
     this.sourceContext.putImageData(this.sourceImage, 0, 0);
   }
 
+  /** The ghosts follow the active frame and the layers, but only cost anything when shown. */
+  private refreshOnion(): void {
+    if (this.onion.previous || this.onion.next || this.onionVisible) this.invalidateOnion();
+  }
+
+  private invalidateOnion(): void {
+    this.onionDirty = true;
+    this.fullDocument = true;
+    this.schedule();
+  }
+
+  /** Redraws the ghost canvas from the frames next to the active one. */
+  private rebuildOnion(): void {
+    this.onionDirty = false;
+    this.onionPixels.fill(0);
+    this.onionVisible = false;
+    if (this.playbackFrame === null) {
+      const active = this.session.document.activeFrame;
+      const ghosts: [number, boolean, number][] = [
+        [active - 1, this.onion.previous, ONION_PREVIOUS],
+        [active + 1, this.onion.next, ONION_NEXT],
+      ];
+      for (const [index, enabled, tint] of ghosts) {
+        if (!enabled || index < 0 || index >= this.session.sprite.frames.length) continue;
+        const frame = compositeFrame(this.session.sprite, index);
+        const color = tint & 0x00ffffff;
+        for (let i = 0; i < frame.data.length; i++) {
+          const alpha = (frame.data[i] ?? 0) >>> 24;
+          if (alpha === 0) continue;
+          this.onionPixels[i] = (Math.round(alpha * this.onion.opacity) << 24) | color;
+          this.onionVisible = true;
+        }
+      }
+    }
+    this.onionContext.putImageData(this.onionImage, 0, 0);
+  }
+
   private invalidateDocument(dirty: Rect): void {
-    compositeRegion(this.session.sprite, this.composite, dirty);
+    if (this.playbackFrame !== null) {
+      // The picture on screen is another frame: redraw it whole.
+      this.recomposite();
+      this.fullDocument = true;
+      this.schedule();
+      return;
+    }
+    this.compose(dirty);
     const x = Math.max(0, dirty.x);
     const y = Math.max(0, dirty.y);
     const width = Math.min(this.composite.width, dirty.x + dirty.width) - x;
@@ -284,6 +394,7 @@ export class CanvasRenderer {
 
   private draw(): void {
     if (this.canvases.document.width === 0) return;
+    if (this.onionDirty) this.rebuildOnion();
     if (this.fullDocument) {
       this.drawDocument(null);
     } else if (this.pendingDocument) {
@@ -347,6 +458,19 @@ export class CanvasRenderer {
     context.fillRect(region.x * scale, region.y * scale, destWidth, destHeight);
     context.restore();
     context.imageSmoothingEnabled = false;
+    if (this.onionVisible) {
+      context.drawImage(
+        this.onionCanvas,
+        region.x,
+        region.y,
+        region.width,
+        region.height,
+        destX,
+        destY,
+        destWidth,
+        destHeight,
+      );
+    }
     context.drawImage(
       this.source,
       region.x,

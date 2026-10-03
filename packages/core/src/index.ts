@@ -3,8 +3,21 @@ export type { Color, ColorParseError, Rgba } from './domain/color.js';
 export { err, ok } from './result.js';
 export type { Result } from './result.js';
 export { MAX_CANVAS_SIZE, PixelBuffer } from './domain/pixel-buffer.js';
-export { createSprite } from './domain/sprite.js';
-export type { BlendMode, InvalidSizeError, Layer, Sprite, SpriteOptions } from './domain/sprite.js';
+export {
+  DEFAULT_FRAME_DURATION,
+  MAX_FRAMES,
+  MAX_FRAME_DURATION,
+  MIN_FRAME_DURATION,
+  createSprite,
+} from './domain/sprite.js';
+export type {
+  BlendMode,
+  Frame,
+  InvalidSizeError,
+  Layer,
+  Sprite,
+  SpriteOptions,
+} from './domain/sprite.js';
 export { createSequentialIdGenerator } from './ports/id-generator.js';
 export type { IdGenerator } from './ports/id-generator.js';
 export { traceLine } from './algorithms/line.js';
@@ -31,8 +44,18 @@ export {
   MAX_EXPORT_DIMENSION,
   MAX_EXPORT_SCALE,
   MIN_EXPORT_SCALE,
+  checkExportSize,
+  exportFrame,
   exportSprite,
 } from './io/export.js';
+export { DEFAULT_SHEET_COLUMNS, buildSpritesheet, sheetGrid } from './io/spritesheet.js';
+export type {
+  SheetData,
+  SheetError,
+  SheetFrame,
+  SheetOptions,
+  Spritesheet,
+} from './io/spritesheet.js';
 export type { ExportError, ExportImage, ExportOptions } from './io/export.js';
 export {
   MAX_ZOOM,
@@ -50,6 +73,7 @@ export type { TouchPair, TouchPoint, Viewport } from './viewport/viewport.js';
 export {
   blendPixel,
   compositePixel,
+  compositeFrame,
   compositeRegion,
   compositeSprite,
 } from './domain/compositing.js';
@@ -57,6 +81,7 @@ export { intersectRects, rectContains, rectFromCorners, rectsEqual } from './dom
 export { DocumentEditor } from './document/document-editor.js';
 export type { BlockReason, DocumentEvents, Floating } from './document/document-editor.js';
 export { MAX_LAYERS } from './document/layer-ops.js';
+export { MAX_SPRITE_BYTES } from './document/frame-ops.js';
 export { scaleAlpha } from './domain/compositing.js';
 export {
   MAX_PALETTE_COLORS,
@@ -90,3 +115,4 @@ export type { PalettePreset } from './data/palette-presets.js';
 export { bytesToBase64, base64ToBytes } from './io/bytes.js';
 // Saving, opening and sharing live in '@vidopix/core/project-formats' so the app loads them on demand.
 export { BAYER_4X4, MAX_DITHER, ditherAllows } from './tools/painter.js';
+// GIF encoding lives in '@vidopix/core/gif' so the app loads it (and its encoder) only in the export worker.

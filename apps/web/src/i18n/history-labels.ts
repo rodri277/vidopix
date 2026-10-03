@@ -38,4 +38,10 @@ export const HISTORY_LABEL_KEYS: Readonly<Record<string, MessageKey>> = {
   'Load palette': 'step.loadPalette',
   'Replace color': 'replace.title',
   'Rename sprite': 'step.renameSprite',
+  'Add frame': 'timeline.new',
+  'Duplicate frame': 'timeline.duplicate',
+  'Delete frame': 'timeline.delete',
+  'Reorder frames': 'step.reorderFrames',
+  'Frame duration': 'step.frameDuration',
+  'Frame rate': 'step.frameRate',
 };

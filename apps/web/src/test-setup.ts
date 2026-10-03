@@ -12,6 +12,12 @@ if (typeof HTMLDialogElement.prototype.showModal !== 'function') {
   };
 }
 
+// jsdom has no canvas: say so quietly (it returns null either way) instead of logging a warning
+// every time a thumbnail tries to draw.
+HTMLCanvasElement.prototype.getContext = function getContext() {
+  return null;
+} as HTMLCanvasElement['getContext'];
+
 afterEach(() => {
   cleanup();
 });

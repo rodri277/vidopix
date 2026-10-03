@@ -1,5 +1,5 @@
 import type { Color } from '../domain/color.js';
-import { blendOnto, compositeSprite } from '../domain/compositing.js';
+import { blendOnto, compositeFrame, compositeSprite } from '../domain/compositing.js';
 import { PixelBuffer } from '../domain/pixel-buffer.js';
 import type { Sprite } from '../domain/sprite.js';
 import { err, ok, type Result } from '../result.js';
@@ -34,11 +34,28 @@ export interface ExportImage {
   toBytes(): Uint8ClampedArray<ArrayBuffer>;
 }
 
+/** The sprite as the editor shows it now: the active frame of every visible layer. */
 export function exportSprite(
   sprite: Sprite,
   options: ExportOptions,
 ): Result<ExportImage, ExportError> {
-  const { scale } = options;
+  return scaleImage(sprite, options, () => compositeSprite(sprite));
+}
+
+/** One frame of the animation, flattened and scaled like `exportSprite`. */
+export function exportFrame(
+  sprite: Sprite,
+  frame: number,
+  options: ExportOptions,
+): Result<ExportImage, ExportError> {
+  return scaleImage(sprite, options, () => compositeFrame(sprite, frame));
+}
+
+/** Checks `scale` against the sprite and says how large the result would be. */
+export function checkExportSize(
+  sprite: Sprite,
+  scale: number,
+): Result<{ width: number; height: number }, ExportError> {
   if (!Number.isInteger(scale) || scale < MIN_EXPORT_SCALE || scale > MAX_EXPORT_SCALE) {
     return err({ kind: 'invalid-scale', scale });
   }
@@ -47,8 +64,20 @@ export function exportSprite(
   if (width > MAX_EXPORT_DIMENSION || height > MAX_EXPORT_DIMENSION) {
     return err({ kind: 'too-large', width, height, max: MAX_EXPORT_DIMENSION });
   }
+  return ok({ width, height });
+}
 
-  const flat = compositeSprite(sprite);
+function scaleImage(
+  sprite: Sprite,
+  options: ExportOptions,
+  flatten: () => PixelBuffer,
+): Result<ExportImage, ExportError> {
+  const { scale } = options;
+  const size = checkExportSize(sprite, scale);
+  if (!size.ok) return size;
+  const { width, height } = size.value;
+
+  const flat = flatten();
   if (options.background !== undefined) blendUnder(flat, options.background);
 
   const pixels = new Uint32Array(width * height);
