@@ -1,0 +1,30 @@
+:root {
+  color-scheme: dark;
+
+  --bg-app: #111318;
+  --bg-panel: #181b21;
+  --bg-elevated: #20242c;
+  --border: #2a2f38;
+  --text: #e6e8eb;
+  --text-muted: #9aa1ac;
+  --accent: #7c5cff;
+  --danger: #ff5c5c;
+  --success: #3dd68c;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --radius: 6px;
+
+  --font-ui: 'Inter Variable', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono Variable', ui-monospace, monospace;
+  --font-size-base: 13px;
+
+  --topbar-height: 40px;
+  --options-height: 32px;
+  --toolbar-width: 48px;
+  --side-panel-width: 280px;
+  --statusbar-height: 24px;
+}
