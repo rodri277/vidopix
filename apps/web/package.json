@@ -11,7 +11,8 @@
     "preview": "vite preview --port 4173 --strictPort",
     "typecheck": "tsc --noEmit",
     "e2e": "playwright test",
-    "size": "size-limit"
+    "size": "size-limit",
+    "test": "vitest run"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.13.0",

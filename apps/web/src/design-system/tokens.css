@@ -8,6 +8,8 @@
   --text: #e6e8eb;
   --text-muted: #9aa1ac;
   --accent: #7c5cff;
+  /* Darker accent for filled controls with white text: #7c5cff alone gives 4.35:1, below AA. */
+  --accent-strong: #6b45f0;
   --danger: #ff5c5c;
   --success: #3dd68c;
 

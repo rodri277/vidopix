@@ -16,7 +16,7 @@ export class PixelBuffer {
   private constructor(
     readonly width: number,
     readonly height: number,
-    readonly data: Uint32Array,
+    readonly data: Uint32Array<ArrayBuffer>,
   ) {}
 
   static create(width: number, height: number): PixelBuffer {
