@@ -102,6 +102,8 @@ export interface EditorState {
   readonly showGrid: boolean;
   readonly panelsHidden: boolean;
   readonly dialog: DialogId | null;
+  /** The new sprite dialog was opened for a first visit, so it greets the user. */
+  readonly welcome: boolean;
   readonly cursor: Point | null;
   readonly keyboardCursor: Point | null;
   /** Space is held: dragging pans instead of drawing. */
@@ -177,6 +179,8 @@ export interface EditorActions {
   toggleGrid(): void;
   togglePanels(): void;
   openDialog(dialog: DialogId): void;
+  /** On a first visit: asks what size of canvas to start with. */
+  openWelcome(): void;
   closeDialog(): void;
   setCursor(cursor: Point | null): void;
   setKeyboardCursor(cursor: Point | null): void;
@@ -290,6 +294,7 @@ export function createEditorStore(
     showGrid: true,
     panelsHidden: false,
     dialog: null,
+    welcome: false,
     cursor: null,
     keyboardCursor: null,
     panMode: false,
@@ -501,8 +506,12 @@ export function createEditorStore(
       session.cancelStroke();
       set({ dialog });
     },
+    openWelcome: () => {
+      session.cancelStroke();
+      set({ dialog: 'new-sprite', welcome: true });
+    },
     closeDialog: () => {
-      set({ dialog: null });
+      set({ dialog: null, welcome: false });
     },
     setCursor: (cursor) => {
       const previous = get().cursor;

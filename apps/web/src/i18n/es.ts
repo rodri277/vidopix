@@ -252,6 +252,8 @@ export const es: Readonly<Record<MessageKey, string>> = {
   'newSprite.create': 'Crear',
   'newSprite.error': 'El ancho y el alto deben ser números enteros de 1 a {max}.',
   'newSprite.hint': 'El sprite en el que trabajas se queda en Abrir reciente.',
+  'newSprite.welcome':
+    'Te damos la bienvenida a Vidopix. Elige el tamaño del lienzo para empezar, o cancela para empezar con uno pequeño. Puedes crear otro desde el menú Archivo cuando quieras.',
 
   'export.title': 'Exportar',
   'export.format': 'Formato',
@@ -286,6 +288,7 @@ export const es: Readonly<Record<MessageKey, string>> = {
   'timeline.frameInfo': 'Fotograma {number} de {total}, {duration} ms',
   'timeline.duration': 'Duración del fotograma {number} (ms)',
   'timeline.new': 'Nuevo fotograma',
+  'timeline.addTile': 'Añadir fotograma',
   'timeline.duplicate': 'Duplicar fotograma',
   'timeline.delete': 'Eliminar fotograma',
   'timeline.moveLeft': 'Mover el fotograma antes',

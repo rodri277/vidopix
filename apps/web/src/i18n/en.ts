@@ -272,6 +272,8 @@ export const en = {
   'newSprite.create': 'Create',
   'newSprite.error': 'Width and height must be whole numbers from 1 to {max}.',
   'newSprite.hint': 'The sprite you are working on stays in Open recent.',
+  'newSprite.welcome':
+    'Welcome to Vidopix. Choose the size of your canvas to start, or cancel to begin with a small one. You can start another from the File menu at any time.',
 
   // Export dialog
   'export.title': 'Export',
@@ -308,6 +310,7 @@ export const en = {
   'timeline.frameInfo': 'Frame {number} of {total}, {duration} ms',
   'timeline.duration': 'Duration of frame {number} (ms)',
   'timeline.new': 'New frame',
+  'timeline.addTile': 'Add frame',
   'timeline.duplicate': 'Duplicate frame',
   'timeline.delete': 'Delete frame',
   'timeline.moveLeft': 'Move frame earlier',

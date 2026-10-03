@@ -15,6 +15,13 @@ const context = await browser.newContext({
   viewport: { width: 1280, height: 800 },
   locale: 'en-US',
   acceptDownloads: true,
+  // A first visit opens a size dialog; these scripts start as someone who has seen it.
+  storageState: {
+    cookies: [],
+    origins: [
+      { origin: 'http://localhost:4173', localStorage: [{ name: 'vidopix.welcomed', value: '1' }] },
+    ],
+  },
 });
 const page = await context.newPage();
 await page.goto(URL_);
