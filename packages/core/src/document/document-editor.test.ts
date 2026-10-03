@@ -640,6 +640,77 @@ describe('palette with history', () => {
   });
 });
 
+describe('replaceColor', () => {
+  const GREEN = packRgba(0, 255, 0, 255);
+
+  it('replaces the color on every layer in one undoable step', () => {
+    const editor = createEditor();
+    paint(editor, 0, 0, RED);
+    paint(editor, 1, 0, BLUE);
+    editor.addLayer();
+    paint(editor, 2, 2, RED);
+    editor.setLayerVisible(editor.activeLayer.id, false);
+
+    expect(editor.replaceColor(RED, GREEN)).toBe(2);
+    expect(editor.sprite.layers[0]?.buffer.get(0, 0)).toBe(GREEN);
+    expect(editor.sprite.layers[0]?.buffer.get(1, 0)).toBe(BLUE);
+    expect(editor.sprite.layers[1]?.buffer.get(2, 2)).toBe(GREEN);
+
+    editor.undo();
+    expect(editor.sprite.layers[0]?.buffer.get(0, 0)).toBe(RED);
+    expect(editor.sprite.layers[1]?.buffer.get(2, 2)).toBe(RED);
+    editor.redo();
+    expect(editor.sprite.layers[1]?.buffer.get(2, 2)).toBe(GREEN);
+  });
+
+  it('only matches the exact color, alpha included', () => {
+    const editor = createEditor();
+    paint(editor, 0, 0, RED);
+    paint(editor, 1, 0, packRgba(255, 0, 0, 128));
+    expect(editor.replaceColor(RED, BLUE)).toBe(1);
+    expect(editor.activeLayer.buffer.get(1, 0)).toBe(packRgba(255, 0, 0, 128));
+  });
+
+  it('stays inside the selection when there is one', () => {
+    const editor = createEditor();
+    paint(editor, 0, 0, RED);
+    paint(editor, 5, 5, RED);
+    editor.previewSelection({ x: 4, y: 4, width: 3, height: 3 });
+    editor.commitSelection(null);
+    expect(editor.replaceColor(RED, BLUE)).toBe(1);
+    expect(editor.activeLayer.buffer.get(0, 0)).toBe(RED);
+    expect(editor.activeLayer.buffer.get(5, 5)).toBe(BLUE);
+  });
+
+  it('skips locked layers', () => {
+    const editor = createEditor();
+    paint(editor, 0, 0, RED);
+    editor.addLayer();
+    paint(editor, 1, 1, RED);
+    editor.setLayerLocked(editor.sprite.layers[0]?.id ?? '', true);
+    expect(editor.replaceColor(RED, BLUE)).toBe(1);
+    expect(editor.sprite.layers[0]?.buffer.get(0, 0)).toBe(RED);
+    expect(editor.sprite.layers[1]?.buffer.get(1, 1)).toBe(BLUE);
+  });
+
+  it('records nothing when the color is absent or unchanged', () => {
+    const editor = createEditor();
+    paint(editor, 0, 0, RED);
+    expect(editor.replaceColor(BLUE, GREEN)).toBe(0);
+    expect(editor.replaceColor(RED, RED)).toBe(0);
+    expect(editor.canUndo).toBe(false);
+  });
+
+  it('reports the changed area to the renderer', () => {
+    const editor = createEditor();
+    paint(editor, 2, 3, RED);
+    paint(editor, 5, 6, RED);
+    const dirty = record(editor, 'documentChanged');
+    editor.replaceColor(RED, BLUE);
+    expect(dirty.at(-1)).toEqual({ dirty: { x: 2, y: 3, width: 4, height: 4 } });
+  });
+});
+
 describe('document lifecycle', () => {
   it('replacing the sprite resets layers, selection, floating content and history', () => {
     const editor = createEditor();

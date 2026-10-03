@@ -1,7 +1,7 @@
 import { blendPixel, compositePixel, compositeSprite, scaleAlpha } from '../domain/compositing.js';
 import type { Color } from '../domain/color.js';
 import { PixelBuffer } from '../domain/pixel-buffer.js';
-import { intersectRects, rectsEqual, type Rect } from '../domain/rect.js';
+import { intersectRects, rectContains, rectsEqual, unionRects, type Rect } from '../domain/rect.js';
 import type { Palette, PaletteColor } from '../domain/palette.js';
 import type { Layer, Sprite } from '../domain/sprite.js';
 import { PixelPatchCommand, type Command } from '../history/command.js';
@@ -396,6 +396,43 @@ export class DocumentEditor {
 
   private paletteEdit(label: string, compute: (state: DocumentState) => DocumentState): void {
     this.structural(label, compute, 0, false);
+  }
+
+  /**
+   * Replaces every pixel of exactly `from` with `to` on all layers that are not locked, hidden
+   * ones included, inside the selection when there is one. One undo step. Returns how many
+   * pixels changed.
+   */
+  replaceColor(from: Color, to: Color): number {
+    this.commitFloating();
+    if (from === to) return 0;
+    const clip = this.selection;
+    const commands: Command[] = [];
+    let changed = 0;
+    let dirty: Rect | null = null;
+
+    for (const layer of this.sprite.layers) {
+      if (layer.locked) continue;
+      const { buffer } = layer;
+      const recorder = new PatchRecorder(buffer, clip);
+      for (let y = 0; y < buffer.height; y++) {
+        for (let x = 0; x < buffer.width; x++) {
+          if (buffer.data[y * buffer.width + x] !== from) continue;
+          if (clip && !rectContains(clip, x, y)) continue;
+          recorder.setPixel(x, y, to);
+          changed++;
+        }
+      }
+      dirty = unionRects(dirty, recorder.takeDirty());
+      const patch = recorder.finish();
+      if (patch) commands.push(new PixelPatchCommand('Replace color', buffer, patch));
+    }
+
+    if (commands.length === 0) return 0;
+    this.markDirty(dirty);
+    this.history.record(new CompoundCommand('Replace color', commands));
+    this.emitHistory('record', 'Replace color');
+    return changed;
   }
 
   // ---- Selection ----
