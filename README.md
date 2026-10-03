@@ -6,7 +6,7 @@ A pixel art editor that runs in your browser: no install, no account, and a buil
 
 ![A slime hopping under a crescent moon, drawn in Vidopix and exported with its own GIF export](docs/media/showcase.gif)
 
-> **Status:** v1.2.0, all phases of [SPEC.md](SPEC.md) done. The animation above was drawn in the editor, with four layers and eight frames, and exported with its own GIF export (`pnpm showcase` redraws it). **[Try it live](https://vidopix.vercel.app)** (see [Deploying](#deploying)).
+> **Status:** v1.2.1, all phases of [SPEC.md](SPEC.md) done. The animation above was drawn in the editor, with four layers and eight frames, and exported with its own GIF export (`pnpm showcase` redraws it). **[Try it live](https://vidopix.vercel.app)** (see [Deploying](#deploying)).
 
 ![The editor with an animation, its timeline and onion skin](docs/media/animation.png)
 

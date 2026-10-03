@@ -94,16 +94,17 @@ await drag(0, 56, 63, 56);
 await page.getByRole('button', { name: 'New layer' }).click();
 await rename('Layer 2', 'Stars');
 await page.keyboard.press('b');
+// Away from the title and from where the slime hops, so a twinkling star is never half hidden.
 const stars = [
   [5, 5],
-  [14, 14],
+  [14, 13],
   [26, 3],
-  [9, 27],
-  [37, 15],
-  [60, 24],
-  [3, 40],
-  [31, 30],
-  [54, 38],
+  [8, 36],
+  [37, 13],
+  [58, 33],
+  [3, 45],
+  [55, 44],
+  [46, 5],
 ];
 await color('#9AA0D8');
 for (const [x, y] of stars) await click(x, y);
@@ -222,8 +223,10 @@ for (let frame = 1; frame < hops.length; frame++) {
   await layerButton('Slime').click();
   await page.getByRole('button', { name: 'Duplicate frame' }).click();
   await page.keyboard.press('m');
-  await drag(cx - 12, 30, cx + 12, 60);
+  await drag(cx - 12, 22, cx + 12, 62);
   await page.keyboard.press('Delete');
+  // The selection would also clip everything drawn next, so drop it.
+  await page.keyboard.press('ControlOrMeta+d');
   await drawSlime(hops[frame]);
   await layerButton('Stars').click();
   await twinkle(frame - 1, false);

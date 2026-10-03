@@ -6,7 +6,7 @@ Un editor de pixel art que funciona en el navegador: sin instalar nada, sin cuen
 
 ![Un slime saltando bajo una luna creciente, dibujado en Vidopix y exportado con su propia exportación a GIF](docs/media/showcase.gif)
 
-> **Estado:** v1.2.0, todas las fases de [SPEC.md](SPEC.md) terminadas. La animación de arriba se dibujó en el editor, con cuatro capas y ocho fotogramas, y se exportó con su propia exportación a GIF (`pnpm showcase` la vuelve a dibujar). **[Pruébalo online](https://vidopix.vercel.app)** (ver [Despliegue](#despliegue)).
+> **Estado:** v1.2.1, todas las fases de [SPEC.md](SPEC.md) terminadas. La animación de arriba se dibujó en el editor, con cuatro capas y ocho fotogramas, y se exportó con su propia exportación a GIF (`pnpm showcase` la vuelve a dibujar). **[Pruébalo online](https://vidopix.vercel.app)** (ver [Despliegue](#despliegue)).
 
 ![El editor con una animación, su línea de tiempo y el papel cebolla](docs/media/animation.png)
 
