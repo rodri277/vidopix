@@ -88,3 +88,4 @@ export { PALETTE_PRESETS, presetToColors } from './data/palette-presets.js';
 export type { PalettePreset } from './data/palette-presets.js';
 export { bytesToBase64, base64ToBytes } from './io/bytes.js';
 // Saving, opening and sharing live in '@vidopix/core/project-formats' so the app loads them on demand.
+export { BAYER_4X4, MAX_DITHER, ditherAllows } from './tools/painter.js';

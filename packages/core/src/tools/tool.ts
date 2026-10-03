@@ -39,6 +39,16 @@ export interface ToolOptions {
   readonly tolerance: number;
   /** Rectangle and ellipse: filled or outline only. */
   readonly shapeFilled: boolean;
+  /** Draw a mirror image across the vertical axis through the middle of the canvas. */
+  readonly mirrorX: boolean;
+  /** Draw a mirror image across the horizontal axis through the middle of the canvas. */
+  readonly mirrorY: boolean;
+  /** Ordered dither density from 1 to 16; 16 is solid. */
+  readonly dither: number;
+  /** Pencil: drop the extra corner pixels that make diagonal lines look thick. */
+  readonly pixelPerfect: boolean;
+  /** Vary the brush size with pen pressure, when the device reports it. */
+  readonly pressure: boolean;
 }
 
 export const DEFAULT_TOOL_OPTIONS: ToolOptions = {
@@ -46,6 +56,11 @@ export const DEFAULT_TOOL_OPTIONS: ToolOptions = {
   fillMode: 'contiguous',
   tolerance: 0,
   shapeFilled: false,
+  mirrorX: false,
+  mirrorY: false,
+  dither: 16,
+  pixelPerfect: false,
+  pressure: false,
 };
 
 export type ColorSlot = 'primary' | 'secondary';
@@ -58,6 +73,8 @@ export interface PointerInput {
   readonly button: ColorSlot;
   /** Constrains shapes to squares/circles and lines to 0, 45 or 90 degrees. */
   readonly shift: boolean;
+  /** Pen pressure from 0 to 1, when the pointer is a pen that reports it. */
+  readonly pressure?: number;
 }
 
 /** Pixels a tool is about to draw, shown on the overlay until the stroke is confirmed. */
