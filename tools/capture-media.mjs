@@ -113,7 +113,7 @@ await page.getByRole('tab', { name: 'Generate' }).click();
 await shot('generate');
 await page.getByRole('tab', { name: 'Color' }).click();
 
-// The header GIF is the app's own export of the animation.
+// The slime GIF is the app's own export of the animation.
 await page.keyboard.press('ControlOrMeta+e');
 const dialog = page.getByRole('dialog', { name: 'Export' });
 await dialog.getByLabel('Format').selectOption({ label: 'Animated GIF' });
@@ -122,7 +122,7 @@ await dialog.getByLabel('Transparent background').uncheck();
 await shot('export');
 const download = page.waitForEvent('download');
 await dialog.getByRole('button', { name: 'Export' }).click();
-copyFileSync(await (await download).path(), join(OUT, 'header.gif'));
+copyFileSync(await (await download).path(), join(OUT, 'slime.gif'));
 await dialog.waitFor({ state: 'hidden' });
 
 // Saved work and the Spanish interface (Phase 4).

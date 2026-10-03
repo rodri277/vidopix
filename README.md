@@ -4,9 +4,9 @@
 
 A pixel art editor that runs in your browser: no install, no account, and a built-in palette generator. By vidotho.
 
-![A slime squashing and stretching, exported from Vidopix as an animated GIF](docs/media/header.gif)
+![A slime hopping under a crescent moon, drawn in Vidopix and exported with its own GIF export](docs/media/showcase.gif)
 
-> **Status:** v1.1.0, all phases of [SPEC.md](SPEC.md) done. The slime above was drawn in the editor and exported with its own GIF export. The live demo link is added once the app is deployed (see [Deploying](#deploying)).
+> **Status:** v1.1.2, all phases of [SPEC.md](SPEC.md) done. The animation above was drawn in the editor, with four layers and eight frames, and exported with its own GIF export (`pnpm showcase` redraws it). The live demo link is added once the app is deployed (see [Deploying](#deploying)).
 
 ![The editor with an animation, its timeline and onion skin](docs/media/animation.png)
 
@@ -48,6 +48,8 @@ A pixel art editor that runs in your browser: no install, no account, and a buil
 - A timeline of frames with a duration each, looping playback, onion skin, and export as an animated GIF or as a spritesheet with a JSON file of coordinates. PNG export at 1× to 32×.
 
 ![Exporting an animated GIF](docs/media/export.png)
+
+![The header animation open in the editor: four layers and eight frames](docs/media/showcase-editor.png)
 
 ## Technical highlights
 
@@ -121,17 +123,19 @@ pnpm install
 pnpm dev
 ```
 
-| Command           | What it does                                                    |
-| ----------------- | --------------------------------------------------------------- |
-| `pnpm lint`       | ESLint and the architecture boundaries                          |
-| `pnpm typecheck`  | TypeScript in every package                                     |
-| `pnpm test`       | Core tests (coverage at least 90%), component tests, boundaries |
-| `pnpm e2e`        | Playwright and axe against the production build                 |
-| `pnpm bench`      | Core benchmarks                                                 |
-| `pnpm build`      | Production build                                                |
-| `pnpm size`       | Bundle size budget                                              |
-| `pnpm lighthouse` | Lighthouse on the production build                              |
-| `pnpm media`      | Regenerates the screenshots and header GIF of this README       |
+| Command           | What it does                                                           |
+| ----------------- | ---------------------------------------------------------------------- |
+| `pnpm lint`       | ESLint and the architecture boundaries                                 |
+| `pnpm typecheck`  | TypeScript in every package                                            |
+| `pnpm test`       | Core tests (coverage at least 90%), component tests, boundaries        |
+| `pnpm e2e`        | Playwright and axe against the production build                        |
+| `pnpm e2e:webkit` | The same tests on WebKit (`pnpm exec playwright install webkit` first) |
+| `pnpm bench`      | Core benchmarks                                                        |
+| `pnpm build`      | Production build                                                       |
+| `pnpm size`       | Bundle size budget                                                     |
+| `pnpm lighthouse` | Lighthouse on the production build                                     |
+| `pnpm media`      | Regenerates the screenshots of this README                             |
+| `pnpm showcase`   | Redraws the header animation in the editor and exports it              |
 
 ## Deploying
 
@@ -140,14 +144,14 @@ pnpm dev
 ## Known limits
 
 - The layout needs at least 768 px of width; phones are not supported, tablets are.
-- Only Chromium is covered by the automated tests. Safari and Firefox need a manual check, especially for installing the app, the system clipboard, `CompressionStream` links and touch.
+- The automated tests run on Chromium and on WebKit, the engine of Safari (`pnpm e2e:webkit`). Four tests skip on WebKit because Playwright cannot grant clipboard permissions, simulate touch or reload offline there. Firefox and the Safari app itself are not tested; installing the app, the system clipboard, links and touch need a manual check there.
 - A project can be at most 1024×1024 pixels, 64 layers, 128 frames and 20 MB (and 256 MB of pixels in memory). A link can carry about 6000 characters, which is plenty for flat-color pixel art and not enough for large or noisy sprites.
 - A GIF has a single palette of 256 colors and no partial transparency, so an image with more colors is reduced and pixels more than half transparent become opaque or transparent. Quantizing thousands of colors takes about half a second.
 - The sprite and layer names a new project starts with ("Untitled", "Layer 1") are stored text and stay in English. Details of errors from reading palette or project files are technical and stay in English too.
 
 ## Roadmap
 
-Ideas, not commitments: import a GIF or a spritesheet, export APNG or animated WebP, per-frame layer links, and a manual pass in Safari and Firefox.
+Ideas, not commitments: import a GIF or a spritesheet, export APNG or animated WebP, per-frame layer links, and a manual pass in Firefox and in the Safari app.
 
 ## How this was built
 
@@ -155,7 +159,7 @@ Developed with [Claude Code](https://claude.com/claude-code) from a written spec
 
 - **What was asked.** For each of the six phases the specification set the scope and the acceptance criteria. Claude Code started every phase with a short plan (tasks, files, risks), worked test-first in the engine, wrote an ADR for each relevant decision, and opened one pull request per phase.
 - **What the author reviewed and decided.** The author approved each phase plan and answered its open questions, reviewed each pull request before it was merged, and made the project decisions: a public repository, and which defaults to ship (for example the 100 ms default frame duration and the red/blue onion skin).
-- **What was corrected along the way.** Some problems showed up only when measuring, and were fixed rather than left: reloading right after a change lost work (now a synchronous emergency copy); Zod's code generation broke the Content Security Policy (now it runs without `eval`); the first bundle went over budget (file formats and Zod now load on demand); a Lighthouse accessibility check caught frame-duration fields smaller than 24 px; and a manual pass found the tool options bar squeezing its controls on narrow windows.
+- **What was corrected along the way.** Some problems showed up only when measuring, and were fixed rather than left: reloading right after a change lost work (now a synchronous emergency copy); Zod's code generation broke the Content Security Policy (now it runs without `eval`); the first bundle went over budget (file formats and Zod now load on demand); a Lighthouse accessibility check caught frame-duration fields smaller than 24 px; a manual pass found the tool options bar squeezing its controls on narrow windows; and running the tests on WebKit showed that Safari, which has no idle callbacks, loaded the saving code too late for a reload in the first moments to keep the last change.
 
 ## Palette credits
 

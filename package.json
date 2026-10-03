@@ -1,6 +1,6 @@
 {
   "name": "vidopix",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "private": true,
   "type": "module",
   "description": "Browser-based pixel art editor with a built-in palette generator. By vidotho.",
@@ -23,7 +23,8 @@
     "prepare": "husky",
     "bench": "pnpm --filter @vidopix/core bench",
     "lighthouse": "node tools/lighthouse.mjs",
-    "media": "node tools/capture-media.mjs"
+    "media": "node tools/capture-media.mjs",
+    "showcase": "node tools/make-showcase.mjs"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.2.3",

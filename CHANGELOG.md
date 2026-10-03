@@ -2,6 +2,17 @@
 
 All notable changes to this project are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses [Semantic Versioning](https://semver.org/).
 
+## [1.1.2] - 2026-10-03
+
+### Added
+
+- `pnpm e2e:webkit` runs the end-to-end tests on WebKit, the engine of Safari. 63 pass and 4 skip where Playwright cannot do what the test needs.
+- A header animation drawn in the editor (four layers, eight frames) and exported with its own GIF export; `pnpm showcase` redraws it.
+
+### Fixed
+
+- On Safari, which has no idle callbacks, the saving code was requested 200 ms after load, so a reload in that window lost the last change. It now starts right after the first task and on the first edit.
+
 ## [1.1.1] - 2026-10-03
 
 ### Added

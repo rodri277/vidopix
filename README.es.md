@@ -4,9 +4,9 @@
 
 Un editor de pixel art que funciona en el navegador: sin instalar nada, sin cuenta y con un generador de paletas integrado. De vidotho.
 
-![Un slime que se aplasta y se estira, exportado desde Vidopix como GIF animado](docs/media/header.gif)
+![Un slime saltando bajo una luna creciente, dibujado en Vidopix y exportado con su propia exportación a GIF](docs/media/showcase.gif)
 
-> **Estado:** v1.1.0, todas las fases de [SPEC.md](SPEC.md) terminadas. El slime de arriba se dibujó en el editor y se exportó con su propia exportación a GIF. El enlace a la demo se añadirá cuando la app esté desplegada (ver [Despliegue](#despliegue)).
+> **Estado:** v1.1.2, todas las fases de [SPEC.md](SPEC.md) terminadas. La animación de arriba se dibujó en el editor, con cuatro capas y ocho fotogramas, y se exportó con su propia exportación a GIF (`pnpm showcase` la vuelve a dibujar). El enlace a la demo se añadirá cuando la app esté desplegada (ver [Despliegue](#despliegue)).
 
 ![El editor con una animación, su línea de tiempo y el papel cebolla](docs/media/animation.png)
 
@@ -48,6 +48,8 @@ Un editor de pixel art que funciona en el navegador: sin instalar nada, sin cuen
 - Una línea de tiempo de fotogramas con una duración cada uno, reproducción en bucle, papel cebolla, y exportación a GIF animado o a una hoja de sprites con un JSON de coordenadas. Exportación a PNG de 1× a 32×.
 
 ![Exportando un GIF animado](docs/media/export.png)
+
+![La animación de cabecera abierta en el editor: cuatro capas y ocho fotogramas](docs/media/showcase-editor.png)
 
 ## Aspectos técnicos destacados
 
@@ -121,17 +123,19 @@ pnpm install
 pnpm dev
 ```
 
-| Comando           | Qué hace                                                              |
-| ----------------- | --------------------------------------------------------------------- |
-| `pnpm lint`       | ESLint y los límites de arquitectura                                  |
-| `pnpm typecheck`  | TypeScript en todos los paquetes                                      |
-| `pnpm test`       | Tests del core (cobertura de al menos 90 %), de componentes y límites |
-| `pnpm e2e`        | Playwright y axe sobre el build de producción                         |
-| `pnpm bench`      | Benchmarks del core                                                   |
-| `pnpm build`      | Build de producción                                                   |
-| `pnpm size`       | Presupuesto de tamaño del bundle                                      |
-| `pnpm lighthouse` | Lighthouse sobre el build de producción                               |
-| `pnpm media`      | Regenera las capturas y el GIF de cabecera de este README             |
+| Comando           | Qué hace                                                                   |
+| ----------------- | -------------------------------------------------------------------------- |
+| `pnpm lint`       | ESLint y los límites de arquitectura                                       |
+| `pnpm typecheck`  | TypeScript en todos los paquetes                                           |
+| `pnpm test`       | Tests del core (cobertura de al menos 90 %), de componentes y límites      |
+| `pnpm e2e`        | Playwright y axe sobre el build de producción                              |
+| `pnpm e2e:webkit` | Las mismas pruebas en WebKit (antes `pnpm exec playwright install webkit`) |
+| `pnpm bench`      | Benchmarks del core                                                        |
+| `pnpm build`      | Build de producción                                                        |
+| `pnpm size`       | Presupuesto de tamaño del bundle                                           |
+| `pnpm lighthouse` | Lighthouse sobre el build de producción                                    |
+| `pnpm media`      | Regenera las capturas de este README                                       |
+| `pnpm showcase`   | Vuelve a dibujar la animación de cabecera en el editor y la exporta        |
 
 ## Despliegue
 
@@ -140,14 +144,14 @@ pnpm dev
 ## Límites conocidos
 
 - La interfaz necesita al menos 768 px de ancho; los móviles no están soportados, las tablets sí.
-- Solo Chromium está cubierto por las pruebas automáticas. Safari y Firefox necesitan una revisión manual, sobre todo la instalación de la app, el portapapeles del sistema, los enlaces con `CompressionStream` y el táctil.
+- Las pruebas automáticas se ejecutan en Chromium y en WebKit, el motor de Safari (`pnpm e2e:webkit`). Cuatro pruebas se omiten en WebKit porque Playwright no puede conceder permisos de portapapeles, simular el táctil ni recargar sin conexión allí. Firefox y la app Safari en sí no se han probado; la instalación de la app, el portapapeles del sistema, los enlaces y el táctil necesitan una revisión manual en ellos.
 - Un proyecto puede tener como máximo 1024×1024 píxeles, 64 capas, 128 fotogramas y 20 MB (y 256 MB de píxeles en memoria). Un enlace admite unos 6000 caracteres: de sobra para pixel art de colores planos, insuficiente para sprites grandes o con mucho ruido.
 - Un GIF tiene una sola paleta de 256 colores y no tiene transparencia parcial, así que una imagen con más colores se reduce y los píxeles con más de la mitad transparente pasan a opacos o transparentes. Reducir miles de colores tarda medio segundo aproximadamente.
 - Los nombres con los que empieza un proyecto nuevo («Untitled», «Layer 1») son texto guardado y se quedan en inglés. Los detalles de los errores al leer archivos de paleta o de proyecto son técnicos y también se quedan en inglés.
 
 ## Hoja de ruta
 
-Ideas, no compromisos: importar un GIF o una hoja de sprites, exportar APNG o WebP animado, enlaces de capas entre fotogramas y una revisión manual en Safari y Firefox.
+Ideas, no compromisos: importar un GIF o una hoja de sprites, exportar APNG o WebP animado, enlaces de capas entre fotogramas y una revisión manual en Firefox y en la app Safari.
 
 ## Cómo se construyó
 
@@ -155,7 +159,7 @@ Desarrollado con [Claude Code](https://claude.com/claude-code) a partir de una e
 
 - **Qué se pidió.** Para cada una de las seis fases la especificación fijó el alcance y los criterios de aceptación. Claude Code empezó cada fase con un plan breve (tareas, archivos, riesgos), trabajó primero con tests en el motor, escribió un ADR por cada decisión relevante y abrió un pull request por fase.
 - **Qué revisó y decidió el autor.** El autor aprobó el plan de cada fase y respondió a sus dudas, revisó cada pull request antes de fusionarlo y tomó las decisiones del proyecto: un repositorio público y qué valores por defecto entregar (por ejemplo, los 100 ms de duración por defecto de un fotograma y el papel cebolla en rojo y azul).
-- **Qué se corrigió por el camino.** Algunos problemas solo aparecieron al medir y se arreglaron en vez de dejarlos: recargar justo después de un cambio perdía trabajo (ahora hay una copia síncrona de emergencia); la generación de código de Zod rompía la política de seguridad de contenido (ahora funciona sin `eval`); el primer bundle superó el presupuesto (los formatos de archivo y Zod se cargan bajo demanda); una comprobación de accesibilidad de Lighthouse detectó campos de duración de menos de 24 px; y una revisión manual encontró la barra de opciones de herramienta apretando sus controles en ventanas estrechas.
+- **Qué se corrigió por el camino.** Algunos problemas solo aparecieron al medir y se arreglaron en vez de dejarlos: recargar justo después de un cambio perdía trabajo (ahora hay una copia síncrona de emergencia); la generación de código de Zod rompía la política de seguridad de contenido (ahora funciona sin `eval`); el primer bundle superó el presupuesto (los formatos de archivo y Zod se cargan bajo demanda); una comprobación de accesibilidad de Lighthouse detectó campos de duración de menos de 24 px; una revisión manual encontró la barra de opciones de herramienta apretando sus controles en ventanas estrechas; y ejecutar las pruebas en WebKit mostró que Safari, que no tiene callbacks de inactividad, cargaba demasiado tarde el código de guardado para que una recarga en los primeros instantes conservara el último cambio.
 
 ## Créditos de las paletas
 
