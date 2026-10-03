@@ -4,7 +4,7 @@
 
 A pixel art editor that runs in your browser: no install, no account, and a built-in palette generator.
 
-> **Status:** Phase 2 (layers and selection, v0.2.0). Palettes and animation come in the next phases. The live demo link and screenshots are added once the app is deployed.
+> **Status:** Phase 3 (palettes, v0.3.0). Offline use, sharing and animation come in the next phases. The live demo link and screenshots are added once the app is deployed.
 
 ## Goals
 
@@ -20,6 +20,7 @@ A pixel art editor that runs in your browser: no install, no account, and a buil
 - Undo and redo that never run out of steps, only out of a memory budget (64 MB by default).
 - Layers (add, duplicate, delete, rename, reorder, hide, lock, opacity, merge down, flatten), all undoable.
 - Rectangular selection, move, copy, cut, paste and delete; every tool respects the selection.
+- A palette per sprite with six presets, import and export (`.gpl`, `.hex`, JSON), extraction from any image (median cut, in a worker), OKLCH harmonies, hue-shifted shade ramps, a WCAG contrast checker and replace color.
 - PNG export at 1x to 32x.
 - Fully usable from the keyboard: arrow keys move a pixel cursor, hold Enter to draw.
 
@@ -59,6 +60,16 @@ Useful scripts: `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm build`, `pnpm 
 ## How this was built
 
 Developed with Claude Code from a written specification ([SPEC.md](SPEC.md)). This section will cover what was asked, what was reviewed and decided by the author, and what was corrected, once there is more to tell.
+
+## Palette credits
+
+The preset palettes use the color values published on [Lospec](https://lospec.com/palette-list). They belong to their authors:
+
+- **PICO-8**: Lexaloffle Games.
+- **DawnBringer 16** and **DawnBringer 32**: Richard "DawnBringer" Fhager.
+- **Sweetie 16**: GrafxKid.
+- **Endesga 32**: ENDESGA.
+- **Resurrect 64**: Kerrie Lake.
 
 ## Credits and license
 

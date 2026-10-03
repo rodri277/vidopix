@@ -4,7 +4,7 @@
 
 Un editor de pixel art que funciona en el navegador: sin instalar nada, sin cuenta y con un generador de paletas integrado.
 
-> **Estado:** Fase 2 (capas y selección, v0.2.0). Las paletas y la animación llegan en las siguientes fases. El enlace a la demo y las capturas se añadirán cuando la app esté desplegada.
+> **Estado:** Fase 3 (paletas, v0.3.0). El uso sin conexión, compartir y la animación llegan en las siguientes fases. El enlace a la demo y las capturas se añadirán cuando la app esté desplegada.
 
 ## Objetivos
 
@@ -20,6 +20,7 @@ Un editor de pixel art que funciona en el navegador: sin instalar nada, sin cuen
 - Deshacer y rehacer que nunca se quedan sin pasos, solo sin presupuesto de memoria (64 MB por defecto).
 - Capas (añadir, duplicar, borrar, renombrar, reordenar, ocultar, bloquear, opacidad, fusionar hacia abajo, aplanar), todas con deshacer.
 - Selección rectangular, mover, copiar, cortar, pegar y borrar; todas las herramientas respetan la selección.
+- Una paleta por sprite con seis predefinidas, importación y exportación (`.gpl`, `.hex`, JSON), extracción desde cualquier imagen (median cut, en un worker), armonías OKLCH, rampas de sombreado con desplazamiento de tono, comprobador de contraste WCAG y reemplazo de color.
 - Exportación a PNG de 1× a 32×.
 - Se puede usar entera con teclado: las flechas mueven un cursor de píxel y mantener Enter dibuja.
 
@@ -59,6 +60,16 @@ Scripts útiles: `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm build`, `pnpm
 ## Cómo se ha construido
 
 Desarrollado con Claude Code a partir de una especificación escrita ([SPEC.md](SPEC.md)). Esta sección contará qué se pidió, qué revisó y decidió el autor y qué se corrigió, cuando haya más que contar.
+
+## Créditos de las paletas
+
+Las paletas predefinidas usan los valores de color publicados en [Lospec](https://lospec.com/palette-list). Pertenecen a sus autores:
+
+- **PICO-8**: Lexaloffle Games.
+- **DawnBringer 16** y **DawnBringer 32**: Richard "DawnBringer" Fhager.
+- **Sweetie 16**: GrafxKid.
+- **Endesga 32**: ENDESGA.
+- **Resurrect 64**: Kerrie Lake.
 
 ## Créditos y licencia
 

@@ -57,3 +57,32 @@ export { DocumentEditor } from './document/document-editor.js';
 export type { BlockReason, DocumentEvents, Floating } from './document/document-editor.js';
 export { MAX_LAYERS } from './document/layer-ops.js';
 export { scaleAlpha } from './domain/compositing.js';
+export {
+  MAX_PALETTE_COLORS,
+  MAX_PALETTE_NAME_LENGTH,
+  createPalette,
+  indexOfColor,
+  opaque,
+  paletteColor,
+} from './domain/palette.js';
+export type { Palette, PaletteColor } from './domain/palette.js';
+export {
+  HARMONY_KINDS,
+  contrastRatio,
+  harmony,
+  relativeLuminance,
+  shadeRamp,
+  wcagLevels,
+} from './domain/color-theory.js';
+export type { HarmonyKind, RampOptions, WcagLevels } from './domain/color-theory.js';
+export {
+  MAX_EXTRACT_COLORS,
+  MIN_EXTRACT_COLORS,
+  fitWithin,
+  medianCut,
+} from './algorithms/median-cut.js';
+export type { ProgressFn } from './algorithms/median-cut.js';
+// Palette file formats live in '@vidopix/core/palette-formats' so the app can load them (and the
+// JSON validator they bring along) on demand instead of in the first download.
+export { PALETTE_PRESETS, presetToColors } from './data/palette-presets.js';
+export type { PalettePreset } from './data/palette-presets.js';

@@ -1,6 +1,6 @@
 {
   "name": "@vidopix/web",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "type": "module",
   "description": "Vidopix web app: React UI and browser adapters around @vidopix/core.",
@@ -43,8 +43,14 @@
   "size-limit": [
     {
       "name": "Initial JavaScript (gzip)",
-      "path": "dist/assets/*.js",
+      "path": "dist/assets/index-*.js",
       "limit": "150 kB",
+      "gzip": true
+    },
+    {
+      "name": "Palette worker, loaded on demand (gzip)",
+      "path": "dist/assets/palette.worker-*.js",
+      "limit": "50 kB",
       "gzip": true
     }
   ]

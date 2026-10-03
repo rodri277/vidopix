@@ -2,6 +2,25 @@
 
 All notable changes to this project are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses [Semantic Versioning](https://semver.org/).
 
+## [0.3.0] - 2026-10-03
+
+### Added
+
+- A palette per sprite: add, remove, reorder, rename and edit colors, with every change undoable. Palette colors are always opaque.
+- Palette panel with an accessible swatch grid (click for the primary color, Shift+click or right click for the secondary, arrows to move, Alt+arrows to reorder, F2 to rename, Delete to remove, drag and drop), and a choice between replacing the palette and adding to it when loading.
+- Six preset palettes, checked against the data published on Lospec and credited to their authors: PICO-8, DawnBringer 16 and 32, Sweetie 16, Endesga 32 and Resurrect 64.
+- Import and export of palettes as `.gpl` (GIMP), `.hex` (Lospec) and versioned JSON. Imported files are validated and errors name the line. Export and import is lossless (ADR 012).
+- Palette extraction from an image with median cut, from 4 to 64 colors, in a Web Worker with a progress bar and a cancel button.
+- Color harmonies in OKLCH (analogous, complementary, triadic, tetradic, monochromatic), shade ramps with hue shifting, and a WCAG contrast checker for the primary and secondary colors (ADR 006).
+- Replace a color across all unlocked layers as one undo step, limited to the selection when there is one.
+- Tabs for Color, Palette and Generate in the side panel.
+- Benchmarks for palette extraction and a Playwright test that extracts a palette from a 4000×3000 image and cancels an extraction in progress.
+
+### Changed
+
+- Palette file formats (and Zod) load on demand, so the first download stays small. The size budget now also covers the extraction worker.
+- Names no longer keep control characters such as line breaks.
+
 ## [0.2.0] - 2026-10-03
 
 ### Added

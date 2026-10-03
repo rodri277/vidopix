@@ -2,6 +2,8 @@ import {
   centerViewport,
   fitViewport,
   nextZoom,
+  PALETTE_PRESETS,
+  presetToColors,
   screenToDocument,
   zoomAt,
   type BlockReason,
@@ -9,6 +11,8 @@ import {
   type ColorSlot,
   type EditorSession,
   type Layer,
+  type Palette,
+  type PaletteColor,
   type PixelBuffer,
   type Rect,
   type ToolId,
@@ -17,7 +21,10 @@ import {
 } from '@vidopix/core';
 import { createStore, type StoreApi } from 'zustand/vanilla';
 
-export type DialogId = 'new-sprite' | 'export';
+export type DialogId = 'new-sprite' | 'export' | 'extract-palette' | 'replace-color';
+
+/** What loading a preset or an imported palette does to the sprite's palette. */
+export type PaletteLoadMode = 'replace' | 'append';
 
 export interface Point {
   readonly x: number;
@@ -38,6 +45,8 @@ const BLOCKED_MESSAGES: Readonly<Record<BlockReason, string>> = {
   'layer-hidden': 'The active layer is hidden',
   'nothing-selected': 'Nothing is selected',
   'single-layer': 'A sprite needs at least one layer',
+  'color-in-palette': 'That color is already in the palette',
+  'palette-full': 'The palette is full (256 colors)',
 };
 
 export interface EditorState {
@@ -61,6 +70,7 @@ export interface EditorState {
   readonly selection: Rect | null;
   /** Content lifted or pasted that has not been dropped yet. */
   readonly hasFloating: boolean;
+  readonly palette: Palette;
   /** Text for the screen-reader live region. */
   readonly announcement: string;
   /** Short message for the status bar, such as why an action was refused. */
@@ -68,6 +78,7 @@ export interface EditorState {
 
   // UI only
   readonly editingSlot: ColorSlot;
+  readonly paletteMode: PaletteLoadMode;
   readonly viewport: Viewport;
   readonly viewSize: { readonly width: number; readonly height: number };
   readonly showGrid: boolean;
@@ -102,6 +113,19 @@ export interface EditorActions {
   setLayerLocked(id: string, locked: boolean): void;
   previewLayerOpacity(id: string, opacity: number): void;
   commitLayerOpacity(id: string, opacity: number): void;
+  addColorToPalette(color?: Color): void;
+  /** Sets the primary (or secondary) color from a palette entry. */
+  pickPaletteColor(index: number, slot: ColorSlot): void;
+  removePaletteColor(index: number): void;
+  movePaletteColor(from: number, to: number): void;
+  renamePaletteColor(index: number, name: string): void;
+  renamePalette(name: string): void;
+  setPaletteMode(mode: PaletteLoadMode): void;
+  loadPreset(id: string): void;
+  /** Applies colors from an import or an extraction, following the current loading mode. */
+  loadPaletteColors(name: string | undefined, colors: readonly PaletteColor[]): void;
+  addColorsToPalette(colors: readonly Color[]): void;
+  replaceColor(from: Color, to: Color): number;
   selectAll(): void;
   deselect(): void;
   deleteSelection(): void;
@@ -175,10 +199,12 @@ export function createEditorStore(session: EditorSession, clipboard: SystemClipb
     activeLayerId: session.activeLayer.id,
     selection: null,
     hasFloating: false,
+    palette: session.document.palette,
     announcement: '',
     notice: '',
 
     editingSlot: 'primary',
+    paletteMode: 'replace',
     viewport: centerViewport(
       1,
       INITIAL_VIEW_SIZE.width,
@@ -258,6 +284,52 @@ export function createEditorStore(session: EditorSession, clipboard: SystemClipb
     },
     commitLayerOpacity: (id, opacity) => {
       session.document.setLayerOpacity(id, opacity);
+    },
+    addColorToPalette: (color) => {
+      const { editingSlot, primary, secondary } = get();
+      session.document.addPaletteColor(color ?? (editingSlot === 'primary' ? primary : secondary));
+    },
+    pickPaletteColor: (index, slot) => {
+      const entry = get().palette.colors[index];
+      if (entry) session.setColor(slot, entry.color);
+    },
+    removePaletteColor: (index) => {
+      session.document.removePaletteColor(index);
+    },
+    movePaletteColor: (from, to) => {
+      session.document.movePaletteColor(from, to);
+    },
+    renamePaletteColor: (index, name) => {
+      session.document.renamePaletteColor(index, name);
+    },
+    renamePalette: (name) => {
+      session.document.renamePalette(name);
+    },
+    setPaletteMode: (paletteMode) => {
+      set({ paletteMode });
+    },
+    loadPreset: (id) => {
+      const preset = PALETTE_PRESETS.find((candidate) => candidate.id === id);
+      if (preset) get().loadPaletteColors(preset.name, presetToColors(preset));
+    },
+    loadPaletteColors: (name, colors) => {
+      if (get().paletteMode === 'append') {
+        session.document.appendPaletteColors(colors);
+      } else {
+        session.document.loadPalette(name ?? session.document.palette.name, colors);
+      }
+    },
+    addColorsToPalette: (colors) => {
+      session.document.appendPaletteColors(colors.map((color) => ({ color })));
+    },
+    replaceColor: (from, to) => {
+      const changed = session.document.replaceColor(from, to);
+      showNotice(
+        changed === 0
+          ? 'That color is not in the drawing'
+          : `Replaced ${String(changed)} pixel${changed === 1 ? '' : 's'}`,
+      );
+      return changed;
     },
     selectAll: () => {
       session.cancelStroke();
@@ -367,6 +439,9 @@ export function createEditorStore(session: EditorSession, clipboard: SystemClipb
   });
   session.on('layersChanged', ({ sprite, activeLayerId }) => {
     store.setState({ layers: sprite.layers, activeLayerId });
+  });
+  session.on('paletteChanged', ({ palette }) => {
+    store.setState({ palette });
   });
   session.on('selectionChanged', ({ selection }) => {
     store.setState({ selection });

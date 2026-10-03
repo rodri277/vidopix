@@ -552,6 +552,165 @@ describe('moving content', () => {
   });
 });
 
+describe('palette with history', () => {
+  const GREEN = packRgba(0, 255, 0, 255);
+
+  it('adds, edits, reorders and removes colors, undoing every step', () => {
+    const editor = createEditor();
+    expect(editor.addPaletteColor(RED, 'Red')).toBe(true);
+    editor.addPaletteColor(BLUE);
+    editor.addPaletteColor(GREEN);
+    editor.movePaletteColor(0, 2);
+    editor.renamePaletteColor(0, 'Water');
+    editor.setPaletteColor(1, packRgba(250, 0, 0, 255));
+    editor.removePaletteColor(2);
+    editor.renamePalette('Mine');
+
+    const names = (): (string | undefined)[] => editor.palette.colors.map((c) => c.name);
+    expect(editor.palette.name).toBe('Mine');
+    expect(editor.palette.colors.map((c) => c.color)).toEqual([BLUE, packRgba(250, 0, 0, 255)]);
+    // After the move the order is Blue, Green, Red. Green became (250,0,0) and Red was removed.
+    expect(names()).toEqual(['Water', undefined]);
+
+    for (let i = 0; i < 8; i++) editor.undo();
+    expect(editor.palette.colors).toEqual([]);
+    expect(editor.palette.name).toBe('Palette');
+    for (let i = 0; i < 8; i++) editor.redo();
+    expect(editor.palette.name).toBe('Mine');
+    expect(names()).toEqual(['Water', undefined]);
+  });
+
+  it('refuses duplicates and a full palette, saying why', () => {
+    const editor = createEditor();
+    const blocked = record(editor, 'actionBlocked');
+    editor.addPaletteColor(RED);
+    expect(editor.addPaletteColor(RED)).toBe(false);
+    for (let i = 0; i < 255; i++) editor.addPaletteColor(packRgba(i, 1, 2, 255));
+    expect(editor.addPaletteColor(packRgba(77, 77, 77, 255))).toBe(false);
+    expect(blocked.map((b) => b.reason)).toEqual(['color-in-palette', 'palette-full']);
+  });
+
+  it('announces palette changes without redrawing the canvas or touching layers', () => {
+    const editor = createEditor();
+    const palettes = record(editor, 'paletteChanged');
+    const layers = record(editor, 'layersChanged');
+    const dirty = record(editor, 'documentChanged');
+    editor.addPaletteColor(RED);
+    editor.undo();
+    expect(palettes).toHaveLength(2);
+    expect(layers).toHaveLength(0);
+    expect(dirty).toHaveLength(0);
+  });
+
+  it('loads a palette in one step and appends new colors to the current one', () => {
+    const editor = createEditor();
+    editor.addPaletteColor(RED);
+    editor.loadPalette('Preset', [{ color: BLUE, name: 'Blue' }, { color: GREEN }]);
+    expect(editor.palette.name).toBe('Preset');
+    expect(editor.palette.colors.map((c) => c.color)).toEqual([BLUE, GREEN]);
+    editor.appendPaletteColors([{ color: RED }, { color: BLUE }]);
+    expect(editor.palette.colors.map((c) => c.color)).toEqual([BLUE, GREEN, RED]);
+    editor.undo();
+    editor.undo();
+    expect(editor.palette.colors.map((c) => c.color)).toEqual([RED]);
+  });
+
+  it('survives layer operations and starts empty for a new sprite', () => {
+    const editor = createEditor();
+    editor.addPaletteColor(RED);
+    editor.addLayer();
+    editor.flatten();
+    expect(editor.palette.colors).toHaveLength(1);
+
+    const ids = createSequentialIdGenerator('n');
+    const fresh = createSprite({ width: 4, height: 4 }, ids);
+    if (!fresh.ok) throw new Error('sprite');
+    const palettes = record(editor, 'paletteChanged');
+    editor.replaceSprite(fresh.value);
+    expect(editor.palette.colors).toEqual([]);
+    expect(palettes).toHaveLength(1);
+  });
+
+  it('drops floating content first, like any other edit', () => {
+    const editor = createEditor();
+    paint(editor, 1, 1, RED);
+    editor.nudge(1, 1);
+    editor.addPaletteColor(BLUE);
+    expect(editor.floating).toBeNull();
+  });
+});
+
+describe('replaceColor', () => {
+  const GREEN = packRgba(0, 255, 0, 255);
+
+  it('replaces the color on every layer in one undoable step', () => {
+    const editor = createEditor();
+    paint(editor, 0, 0, RED);
+    paint(editor, 1, 0, BLUE);
+    editor.addLayer();
+    paint(editor, 2, 2, RED);
+    editor.setLayerVisible(editor.activeLayer.id, false);
+
+    expect(editor.replaceColor(RED, GREEN)).toBe(2);
+    expect(editor.sprite.layers[0]?.buffer.get(0, 0)).toBe(GREEN);
+    expect(editor.sprite.layers[0]?.buffer.get(1, 0)).toBe(BLUE);
+    expect(editor.sprite.layers[1]?.buffer.get(2, 2)).toBe(GREEN);
+
+    editor.undo();
+    expect(editor.sprite.layers[0]?.buffer.get(0, 0)).toBe(RED);
+    expect(editor.sprite.layers[1]?.buffer.get(2, 2)).toBe(RED);
+    editor.redo();
+    expect(editor.sprite.layers[1]?.buffer.get(2, 2)).toBe(GREEN);
+  });
+
+  it('only matches the exact color, alpha included', () => {
+    const editor = createEditor();
+    paint(editor, 0, 0, RED);
+    paint(editor, 1, 0, packRgba(255, 0, 0, 128));
+    expect(editor.replaceColor(RED, BLUE)).toBe(1);
+    expect(editor.activeLayer.buffer.get(1, 0)).toBe(packRgba(255, 0, 0, 128));
+  });
+
+  it('stays inside the selection when there is one', () => {
+    const editor = createEditor();
+    paint(editor, 0, 0, RED);
+    paint(editor, 5, 5, RED);
+    editor.previewSelection({ x: 4, y: 4, width: 3, height: 3 });
+    editor.commitSelection(null);
+    expect(editor.replaceColor(RED, BLUE)).toBe(1);
+    expect(editor.activeLayer.buffer.get(0, 0)).toBe(RED);
+    expect(editor.activeLayer.buffer.get(5, 5)).toBe(BLUE);
+  });
+
+  it('skips locked layers', () => {
+    const editor = createEditor();
+    paint(editor, 0, 0, RED);
+    editor.addLayer();
+    paint(editor, 1, 1, RED);
+    editor.setLayerLocked(editor.sprite.layers[0]?.id ?? '', true);
+    expect(editor.replaceColor(RED, BLUE)).toBe(1);
+    expect(editor.sprite.layers[0]?.buffer.get(0, 0)).toBe(RED);
+    expect(editor.sprite.layers[1]?.buffer.get(1, 1)).toBe(BLUE);
+  });
+
+  it('records nothing when the color is absent or unchanged', () => {
+    const editor = createEditor();
+    paint(editor, 0, 0, RED);
+    expect(editor.replaceColor(BLUE, GREEN)).toBe(0);
+    expect(editor.replaceColor(RED, RED)).toBe(0);
+    expect(editor.canUndo).toBe(false);
+  });
+
+  it('reports the changed area to the renderer', () => {
+    const editor = createEditor();
+    paint(editor, 2, 3, RED);
+    paint(editor, 5, 6, RED);
+    const dirty = record(editor, 'documentChanged');
+    editor.replaceColor(RED, BLUE);
+    expect(dirty.at(-1)).toEqual({ dirty: { x: 2, y: 3, width: 4, height: 4 } });
+  });
+});
+
 describe('document lifecycle', () => {
   it('replacing the sprite resets layers, selection, floating content and history', () => {
     const editor = createEditor();

@@ -1,12 +1,13 @@
 {
   "name": "@vidopix/core",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "type": "module",
   "description": "Pure TypeScript editing engine for Vidopix. No DOM.",
   "license": "MIT",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./palette-formats": "./src/io/palette-formats.ts"
   },
   "scripts": {
     "test": "vitest run --coverage",
@@ -19,5 +20,8 @@
     "fast-check": "^4.10.2",
     "tinybench": "^6.2.0",
     "vitest": "^5.0.3"
+  },
+  "dependencies": {
+    "zod": "^4.6.5"
   }
 }

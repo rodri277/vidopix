@@ -67,6 +67,7 @@ const DOCUMENT_EVENTS: ReadonlySet<string> = new Set([
   'documentChanged',
   'layersChanged',
   'selectionChanged',
+  'paletteChanged',
   'floatingChanged',
   'spriteReplaced',
   'historyChanged',
