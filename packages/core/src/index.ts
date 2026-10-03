@@ -86,3 +86,4 @@ export type { ProgressFn } from './algorithms/median-cut.js';
 // JSON validator they bring along) on demand instead of in the first download.
 export { PALETTE_PRESETS, presetToColors } from './data/palette-presets.js';
 export type { PalettePreset } from './data/palette-presets.js';
+export { bytesToBase64, base64ToBytes } from './io/bytes.js';
