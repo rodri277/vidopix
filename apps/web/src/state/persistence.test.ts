@@ -2,6 +2,8 @@ import { EditorSession, createSequentialIdGenerator, packRgba } from '@vidopix/c
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   Persistence,
+  type EmergencyEntry,
+  type EmergencyStore,
   type ProjectStorage,
   type ProjectSummary,
   type SaveStatus,
@@ -49,8 +51,27 @@ class MemoryStorage implements ProjectStorage {
   }
 }
 
+class MemoryEmergency implements EmergencyStore {
+  entry: EmergencyEntry | null = null;
+  failWrites = false;
+
+  write(entry: EmergencyEntry): void {
+    if (this.failWrites) throw new Error('quota');
+    this.entry = entry;
+  }
+
+  read(): EmergencyEntry | null {
+    return this.entry;
+  }
+
+  clear(): void {
+    this.entry = null;
+  }
+}
+
 function setup() {
   const storage = new MemoryStorage();
+  const emergency = new MemoryEmergency();
   const created = EditorSession.create(
     { width: 8, height: 8 },
     { ids: createSequentialIdGenerator() },
@@ -62,6 +83,7 @@ function setup() {
   const persistence = new Persistence({
     session,
     storage,
+    emergency,
     loadFormats: () => import('@vidopix/core/project-formats'),
     makeThumbnail: () => 'thumb',
     newId: () => `project-${String(++counter)}`,
@@ -69,7 +91,7 @@ function setup() {
     onStatus: (status) => statuses.push(status),
     debounceMs: 500,
   });
-  return { storage, session, persistence, statuses };
+  return { storage, emergency, session, persistence, statuses };
 }
 
 const draw = (session: EditorSession, x: number): void => {
@@ -146,6 +168,7 @@ describe('Persistence', () => {
     const second = new Persistence({
       session: created.value,
       storage: first.storage,
+      emergency: first.emergency,
       loadFormats: () => import('@vidopix/core/project-formats'),
       makeThumbnail: () => 'thumb',
       newId: () => `other-${String(++id)}`,
@@ -168,6 +191,7 @@ describe('Persistence', () => {
     const again = new Persistence({
       session: next.session,
       storage: first.storage,
+      emergency: first.emergency,
       loadFormats: () => import('@vidopix/core/project-formats'),
       makeThumbnail: () => 'thumb',
       newId: () => 'x',
@@ -250,6 +274,76 @@ describe('Persistence', () => {
     await persistence.flush();
     expect(statuses.at(-1)).toBe('saved');
     expect(storage.saves).toBe(1);
+  });
+
+  it('keeps a synchronous copy when the page is closing and restores it after a "reload"', async () => {
+    const first = setup();
+    draw(first.session, 6);
+    // Warm the cache the way the app does at startup, then close before any normal save finishes.
+    await first.persistence.flush();
+    draw(first.session, 7);
+    first.persistence.snapshotNow();
+    expect(first.emergency.entry?.id).toBe('project-1');
+    expect(first.storage.saves).toBe(1);
+
+    const created = EditorSession.create(
+      { width: 8, height: 8 },
+      { ids: createSequentialIdGenerator('c') },
+    );
+    if (!created.ok) throw new Error('session');
+    const reopened = new Persistence({
+      session: created.value,
+      storage: first.storage,
+      emergency: first.emergency,
+      loadFormats: () => import('@vidopix/core/project-formats'),
+      makeThumbnail: () => 'thumb',
+      newId: () => 'fresh',
+      now: () => 9000,
+      onStatus: () => undefined,
+      debounceMs: 10,
+    });
+    expect(await reopened.restoreLast()).toBe('restored');
+    expect(created.value.activeLayer.buffer.get(7, 1)).toBe(packRgba(255, 0, 0, 255));
+    expect(reopened.currentProjectId).toBe('project-1');
+
+    // Once it is in normal storage the emergency copy is gone.
+    await reopened.flush();
+    expect(first.emergency.entry).toBeNull();
+    expect(first.storage.saves).toBe(2);
+  });
+
+  it('makes no emergency copy when nothing changed, or storage refuses it', async () => {
+    const { emergency, session, persistence } = setup();
+    persistence.snapshotNow();
+    expect(emergency.entry).toBeNull();
+    draw(session, 1);
+    await persistence.flush();
+    draw(session, 2);
+    emergency.failWrites = true;
+    expect(() => {
+      persistence.snapshotNow();
+    }).not.toThrow();
+    expect(emergency.entry).toBeNull();
+  });
+
+  it('drops an emergency copy that cannot be read', async () => {
+    const { emergency, persistence } = setup();
+    emergency.entry = { id: 'x', savedAt: 1, text: 'garbage' };
+    expect(await persistence.restoreLast()).toBe('none');
+    expect(emergency.entry).toBeNull();
+  });
+
+  it('does not restore an emergency copy over work already started', async () => {
+    const first = setup();
+    draw(first.session, 1);
+    await first.persistence.flush();
+    draw(first.session, 2);
+    first.persistence.snapshotNow();
+
+    const next = setup();
+    next.emergency.entry = first.emergency.entry;
+    draw(next.session, 3);
+    expect(await next.persistence.restoreLast()).toBe('skipped');
   });
 
   it('does not save after being disposed', async () => {

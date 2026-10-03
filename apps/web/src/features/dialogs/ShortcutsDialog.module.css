@@ -1,0 +1,35 @@
+.groups {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4) var(--space-6);
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.group h3 {
+  margin: 0 0 var(--space-2);
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.list {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 2px var(--space-3);
+  margin: 0;
+  font-size: 12px;
+}
+
+.list dt {
+  color: var(--text);
+}
+
+.list dd {
+  margin: 0;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  text-align: right;
+}

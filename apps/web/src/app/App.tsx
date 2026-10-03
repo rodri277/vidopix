@@ -12,18 +12,25 @@ import { AppMenu } from '../features/menu/AppMenu';
 import { StatusBar } from '../features/statusbar/StatusBar';
 import { ToolOptionsBar } from '../features/tool-options/ToolOptionsBar';
 import { Toolbar } from '../features/toolbar/Toolbar';
-import { EditorProvider, useEditorState } from '../state/editor-context';
+import {
+  EditorProvider,
+  useEditor,
+  useEditorState,
+  type EditorServices,
+} from '../state/editor-context';
 import type { EditorStore } from '../state/editor-store';
 import { useGlobalShortcuts } from './useGlobalShortcuts';
 
 interface Props {
   readonly session: EditorSession;
   readonly store: EditorStore;
+  readonly services: EditorServices;
 }
 
-function Editor({ session, store }: Props) {
+function Editor({ session, store }: Omit<Props, 'services'>) {
   const panelsHidden = useEditorState((state) => state.panelsHidden);
-  useGlobalShortcuts(session, store);
+  const { services } = useEditor();
+  useGlobalShortcuts(session, store, services);
   return (
     <>
       <AppLayout
@@ -54,9 +61,9 @@ function Editor({ session, store }: Props) {
 }
 
 /** Wires the editing session to the interface. The only place features are put together. */
-export function App({ session, store }: Props) {
+export function App({ session, store, services }: Props) {
   return (
-    <EditorProvider session={session} store={store}>
+    <EditorProvider session={session} store={store} services={services}>
       <Editor session={session} store={store} />
     </EditorProvider>
   );

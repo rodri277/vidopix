@@ -80,6 +80,14 @@ describe('resolveShortcut', () => {
     expect(resolveShortcut(key('v', mod), false)).toBeNull();
   });
 
+  it('maps opening, saving and help', () => {
+    expect(resolveShortcut(key('o', { ctrlKey: true }), false)).toEqual({ type: 'open-file' });
+    expect(resolveShortcut(key('s', { ctrlKey: true }), false)).toEqual({ type: 'save-file' });
+    expect(resolveShortcut(key('?', { shiftKey: true }), false)).toEqual({
+      type: 'shortcuts-help',
+    });
+  });
+
   it('does not steal browser shortcuts or Alt combinations', () => {
     expect(resolveShortcut(key('b', { altKey: true }), false)).toBeNull();
     expect(resolveShortcut(key('n', { ctrlKey: true, altKey: true }), false)).toBeNull();

@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { imageFromPasteEvent } from '../adapters/system-clipboard';
 import { isMacPlatform, isTextEntry, resolveShortcut } from '../state/shortcuts';
+import type { EditorServices } from '../state/editor-context';
 import type { EditorStore } from '../state/editor-store';
 import type { EditorSession } from '@vidopix/core';
 
@@ -15,7 +16,11 @@ function isInsideDialogOrMenu(target: EventTarget | null): boolean {
  * Editor-wide keyboard shortcuts, plus the two "hold" behaviors: Space pans while pressed and Alt
  * temporarily switches to the eyedropper.
  */
-export function useGlobalShortcuts(session: EditorSession, store: EditorStore): void {
+export function useGlobalShortcuts(
+  session: EditorSession,
+  store: EditorStore,
+  services: EditorServices,
+): void {
   useEffect(() => {
     const isMac = isMacPlatform(navigator.platform);
     let toolBeforeAlt: ReturnType<typeof store.getState>['tool'] | null = null;
@@ -139,6 +144,23 @@ export function useGlobalShortcuts(session: EditorSession, store: EditorStore): 
         case 'layer-down':
           state.shiftActiveLayer(-1);
           break;
+        case 'open-file': {
+          const input = document.createElement('input');
+          input.type = 'file';
+          input.accept = '.vidopix,application/json';
+          input.onchange = () => {
+            const file = input.files?.[0];
+            if (file) void services.projects.openFile(file);
+          };
+          input.click();
+          break;
+        }
+        case 'save-file':
+          void services.projects.saveFile();
+          break;
+        case 'shortcuts-help':
+          state.openDialog('shortcuts');
+          break;
         case 'commit':
           if (state.hasFloating) state.commitFloating();
           break;
@@ -178,5 +200,5 @@ export function useGlobalShortcuts(session: EditorSession, store: EditorStore): 
       window.removeEventListener('keyup', onKeyUp);
       window.removeEventListener('blur', onBlur);
     };
-  }, [session, store]);
+  }, [session, store, services]);
 }

@@ -20,8 +20,23 @@ import {
   type Viewport,
 } from '@vidopix/core';
 import { createStore, type StoreApi } from 'zustand/vanilla';
+import {
+  DEFAULT_LANGUAGE,
+  translate,
+  type Language,
+  type MessageKey,
+  type MessageParams,
+} from '../i18n';
+import type { SaveStatus } from './persistence';
 
-export type DialogId = 'new-sprite' | 'export' | 'extract-palette' | 'replace-color';
+export type DialogId =
+  | 'new-sprite'
+  | 'export'
+  | 'extract-palette'
+  | 'replace-color'
+  | 'recent-projects'
+  | 'share'
+  | 'shortcuts';
 
 /** What loading a preset or an imported palette does to the sprite's palette. */
 export type PaletteLoadMode = 'replace' | 'append';
@@ -78,6 +93,10 @@ export interface EditorState {
 
   // UI only
   readonly editingSlot: ColorSlot;
+  readonly language: Language;
+  readonly saveStatus: SaveStatus;
+  /** Why saving failed, when it did. */
+  readonly saveDetail: string;
   readonly paletteMode: PaletteLoadMode;
   readonly viewport: Viewport;
   readonly viewSize: { readonly width: number; readonly height: number };
@@ -91,6 +110,13 @@ export interface EditorState {
 }
 
 export interface EditorActions {
+  /** Looks a text up in the current language. */
+  t(key: MessageKey, params?: MessageParams): string;
+  setLanguage(language: Language): void;
+  setSaveStatus(status: SaveStatus, detail?: string): void;
+  renameSprite(name: string): void;
+  /** Shows a short message in the status bar and announces it to screen readers. */
+  notify(message: string): void;
   selectTool(tool: ToolId): void;
   setColor(slot: ColorSlot, color: Color): void;
   setEditingSlot(slot: ColorSlot): void;
@@ -158,7 +184,12 @@ const INITIAL_VIEW_SIZE = { width: 800, height: 600 };
  * UI state for the editor. Document state lives in the core's `EditorSession`; this store mirrors
  * the parts the interface needs to render and adds view-only state such as zoom and dialogs.
  */
-export function createEditorStore(session: EditorSession, clipboard: SystemClipboard): EditorStore {
+export function createEditorStore(
+  session: EditorSession,
+  clipboard: SystemClipboard,
+  initialLanguage: Language = DEFAULT_LANGUAGE,
+  onLanguageChange: (language: Language) => void = () => undefined,
+): EditorStore {
   let noticeTimer: ReturnType<typeof setTimeout> | undefined;
   const showNotice = (message: string): void => {
     clearTimeout(noticeTimer);
@@ -204,6 +235,9 @@ export function createEditorStore(session: EditorSession, clipboard: SystemClipb
     notice: '',
 
     editingSlot: 'primary',
+    language: initialLanguage,
+    saveStatus: 'saved',
+    saveDetail: '',
     paletteMode: 'replace',
     viewport: centerViewport(
       1,
@@ -220,6 +254,20 @@ export function createEditorStore(session: EditorSession, clipboard: SystemClipb
     keyboardCursor: null,
     panMode: false,
 
+    t: (key, params) => translate(get().language, key, params),
+    setLanguage: (language) => {
+      set({ language });
+      onLanguageChange(language);
+    },
+    setSaveStatus: (saveStatus, detail = '') => {
+      set({ saveStatus, saveDetail: detail });
+    },
+    renameSprite: (name) => {
+      session.document.renameSprite(name);
+    },
+    notify: (message) => {
+      showNotice(message);
+    },
     selectTool: (tool) => {
       session.setActiveTool(tool);
     },

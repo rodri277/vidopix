@@ -1,18 +1,24 @@
-import { useId, type InputHTMLAttributes } from 'react';
+import { useId, type InputHTMLAttributes, type Ref } from 'react';
 import { cx } from './cx';
 import styles from './Field.module.css';
 
 interface FieldProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'id'> {
   readonly label: string;
   readonly mono?: boolean;
+  readonly ref?: Ref<HTMLInputElement>;
 }
 
-export function TextField({ label, mono = false, className, ...rest }: FieldProps) {
+export function TextField({ label, mono = false, className, ref, ...rest }: FieldProps) {
   const id = useId();
   return (
     <label className={styles.field} htmlFor={id}>
       {label}
-      <input id={id} className={cx(styles.input, mono && styles.mono, className)} {...rest} />
+      <input
+        id={id}
+        ref={ref}
+        className={cx(styles.input, mono && styles.mono, className)}
+        {...rest}
+      />
     </label>
   );
 }

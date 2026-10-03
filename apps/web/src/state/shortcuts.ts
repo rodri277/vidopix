@@ -24,7 +24,10 @@ export type ShortcutAction =
   | { readonly type: 'duplicate-layer' }
   | { readonly type: 'commit' }
   | { readonly type: 'layer-up' }
-  | { readonly type: 'layer-down' };
+  | { readonly type: 'layer-down' }
+  | { readonly type: 'open-file' }
+  | { readonly type: 'save-file' }
+  | { readonly type: 'shortcuts-help' };
 
 export interface KeyInput {
   readonly key: string;
@@ -71,6 +74,8 @@ export function resolveShortcut(input: KeyInput, isMac: boolean): ShortcutAction
     if (key === ']') return { type: 'layer-up' };
     if (key === '[') return { type: 'layer-down' };
     if (key === 'e') return { type: 'export' };
+    if (key === 'o') return { type: 'open-file' };
+    if (key === 's') return { type: 'save-file' };
     if (key === "'") return { type: 'toggle-grid' };
     if (key === '\\') return { type: 'toggle-panels' };
     return null;
@@ -78,6 +83,7 @@ export function resolveShortcut(input: KeyInput, isMac: boolean): ShortcutAction
 
   if (input.altKey) return null;
   if (key === 'Escape') return { type: 'cancel' };
+  if (key === '?') return { type: 'shortcuts-help' };
   if (key === 'Delete' || key === 'Backspace') return { type: 'delete-selection' };
   if (key === 'Enter') return { type: 'commit' };
   const tool = TOOL_KEYS[key];

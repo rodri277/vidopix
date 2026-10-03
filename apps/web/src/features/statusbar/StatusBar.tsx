@@ -1,18 +1,8 @@
+import { useT } from '../../i18n/useT';
 import { useEditorState } from '../../state/editor-context';
 
-const TOOL_LABELS = {
-  pencil: 'Pencil',
-  eraser: 'Eraser',
-  fill: 'Fill',
-  eyedropper: 'Eyedropper',
-  line: 'Line',
-  rectangle: 'Rectangle',
-  ellipse: 'Ellipse',
-  select: 'Select',
-  move: 'Move',
-} as const;
-
 export function StatusBar() {
+  const t = useT();
   const cursor = useEditorState((state) => state.cursor);
   const keyboardCursor = useEditorState((state) => state.keyboardCursor);
   const width = useEditorState((state) => state.spriteWidth);
@@ -21,7 +11,14 @@ export function StatusBar() {
   const tool = useEditorState((state) => state.tool);
   const selection = useEditorState((state) => state.selection);
   const notice = useEditorState((state) => state.notice);
+  const saveStatus = useEditorState((state) => state.saveStatus);
+  const saveDetail = useEditorState((state) => state.saveDetail);
   const position = keyboardCursor ?? cursor;
+
+  const saveText =
+    saveStatus === 'error' && saveDetail === 'too-large'
+      ? t('save.tooLarge')
+      : t(`save.${saveStatus}`);
 
   return (
     <>
@@ -30,16 +27,16 @@ export function StatusBar() {
           ? `${String(position.x)}, ${String(position.y)}`
           : '—'}
       </span>
-      <span>
-        {String(width)}×{String(height)} px
-      </span>
+      <span>{t('status.size', { width, height })}</span>
       <span>{String(zoom * 100)}%</span>
-      <span>{TOOL_LABELS[tool]}</span>
+      <span>{t(`tool.${tool}`)}</span>
       <span>
-        {selection ? `Selection ${String(selection.width)}×${String(selection.height)}` : ''}
+        {selection
+          ? t('status.selection', { width: selection.width, height: selection.height })
+          : ''}
       </span>
-      <span>{notice === '' ? 'Not saved' : notice}</span>
-      <span>by vidotho</span>
+      <span>{notice === '' ? saveText : notice}</span>
+      <span>{t('status.byline')}</span>
     </>
   );
 }
