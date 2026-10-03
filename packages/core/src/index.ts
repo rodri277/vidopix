@@ -7,3 +7,8 @@ export { createSprite } from './domain/sprite.js';
 export type { BlendMode, InvalidSizeError, Layer, Sprite, SpriteOptions } from './domain/sprite.js';
 export { createSequentialIdGenerator } from './ports/id-generator.js';
 export type { IdGenerator } from './ports/id-generator.js';
+export { traceLine } from './algorithms/line.js';
+export type { PlotFn } from './algorithms/line.js';
+export { traceEllipse, traceRect } from './algorithms/shapes.js';
+export { colorsWithinTolerance, floodFillSpans } from './algorithms/flood-fill.js';
+export type { FillMode, FillOptions, SpanFn } from './algorithms/flood-fill.js';
