@@ -28,9 +28,9 @@ flowchart LR
 
 Arrows only go down into the core or come out of it as events. The core never knows about React or the browser.
 
-## Current state (Phase 2)
+## Current state (Phase 3)
 
-The engine in `packages/core` has the document model, algorithms, tools, history, color math, export and viewport math. `DocumentEditor` owns the layers, the selection, floating (moved or pasted) content, the clipboard and the history; `EditorSession` adds the tools, colors and pointer input on top (ADR 010, ADR 011). `apps/web` has the Canvas 2D renderer, pointer and keyboard input, the menus, the layers and color panels, and the dialogs. Palettes, persistence and animation arrive in later phases.
+The engine in `packages/core` has the document model, algorithms, tools, history, color math, export and viewport math. `DocumentEditor` owns the layers, the selection, floating (moved or pasted) content, the clipboard and the history; `EditorSession` adds the tools, colors and pointer input on top (ADR 010, ADR 011). `apps/web` has the Canvas 2D renderer, pointer and keyboard input, the menus, the layers and color panels, and the dialogs. The sprite carries a palette (ADR 006, ADR 012): palette edits are pure state changes like layer edits, colors are generated in OKLCH, and extraction from images runs in a Web Worker. Persistence, sharing and animation arrive in later phases.
 
 ## Lifecycle of a stroke
 
@@ -56,3 +56,7 @@ The canvas is a focusable widget. Arrow keys move a pixel cursor (Alt moves 8 pi
 ## Layers and floating content
 
 Document state that is not pixels (layers, active layer, selection) is one immutable value replaced on each change, with pixel buffers shared between versions (ADR 010). Moving or pasting pixels is a single open transaction: the content floats above the layer until it is dropped, and a cancel puts everything back (ADR 011). Every edit first drops floating content, so the history never sees a half-finished move.
+
+## Palettes
+
+`Sprite.palette` holds opaque colors with optional names. Edits (`palette-ops.ts`) are pure functions on the document state, so they use the same undo machinery as layers and never redraw the canvas. Color theory (harmonies, shade ramps, WCAG contrast) is pure code in `domain/color-theory.ts`. Palette files are parsed and written by `io/palette-formats.ts`, which the app loads on demand. Extracting a palette from an image is the one piece of work that leaves the main thread: `palette.worker.ts` decodes and shrinks the image, then calls the core's `medianCut`.

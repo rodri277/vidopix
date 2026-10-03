@@ -160,11 +160,13 @@ test('extracting a palette from a 4000x3000 photo keeps the page responsive', as
   });
 
   await dialog.getByLabel('Colors').fill('4');
+  const started = Date.now();
   await dialog.getByRole('button', { name: 'Extract' }).click();
   await expect(dialog.getByRole('img', { name: '4 extracted colors' })).toBeVisible({
     timeout: 20_000,
   });
 
+  const elapsed = Date.now() - started;
   const longest = await page.evaluate(() => {
     const probe = (window as unknown as { __extractProbe: { longest: number; running: boolean } })
       .__extractProbe;
@@ -172,7 +174,7 @@ test('extracting a palette from a 4000x3000 photo keeps the page responsive', as
     return probe.longest;
   });
   console.warn(
-    `Longest gap between frames while extracting from 4000x3000: ${longest.toFixed(0)} ms`,
+    `Extracting from 4000x3000 took ${String(elapsed)} ms; longest gap between frames: ${longest.toFixed(0)} ms`,
   );
   // A blocked main thread would show as a gap of a second or more; allow for slow machines.
   expect(longest).toBeLessThan(250);
