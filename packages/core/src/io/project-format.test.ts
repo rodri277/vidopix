@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { packRgba } from '../domain/color.js';
 import { createPalette } from '../domain/palette.js';
 import { PixelBuffer } from '../domain/pixel-buffer.js';
+import { MAX_FRAMES } from '../domain/sprite.js';
 import type { Layer, Sprite } from '../domain/sprite.js';
 import {
   MAX_PROJECT_BYTES,
@@ -35,6 +36,7 @@ function makeSprite(
       opacity: offset === 0 ? 1 : 0.5,
       blendMode: 'normal',
       buffer,
+      cels: [buffer],
     };
   };
   return {
@@ -43,6 +45,7 @@ function makeSprite(
     width,
     height,
     layers: [layer('a', 0), layer('b', 1), layer('c', 2)],
+    frames: [{ id: 'f1', duration: 100 }],
     palette: createPalette('pal-1', 'Mine', [
       { color: packRgba(255, 0, 0, 255), name: 'Red' },
       { color: packRgba(0, 128, 255, 255) },
@@ -161,10 +164,10 @@ describe('parseProject errors', () => {
     const layers = sprite.layers as Record<string, unknown>[];
     const [first, ...others] = layers;
     expect(
-      reason({ ...data, sprite: { ...sprite, layers: [{ ...first, pixels: 'AAAA' }, ...others] } }),
+      reason({ ...data, sprite: { ...sprite, layers: [{ ...first, cels: ['AAAA'] }, ...others] } }),
     ).toBe('pixels');
     expect(
-      reason({ ...data, sprite: { ...sprite, layers: [{ ...first, pixels: '!!!' }, ...others] } }),
+      reason({ ...data, sprite: { ...sprite, layers: [{ ...first, cels: ['!!!'] }, ...others] } }),
     ).toBe('pixels');
   });
 
@@ -213,5 +216,150 @@ describe('migrations', () => {
     const data = JSON.parse(serializeProject(makeSprite(2, 2, [5]))) as Record<string, unknown>;
     const result = parseProject(JSON.stringify(data), {}, 3);
     expect(result).toMatchObject({ ok: false, error: { reason: 'invalid' } });
+  });
+});
+
+/** A project saved by version 1.0, before frames existed. It must keep opening. */
+const PROJECT_V1 =
+  '{"format":"vidopix","schemaVersion":1,"sprite":{"id":"sprite-fixture","name":"Fixture \u00f1","width":3,"height":2,"palette":{"id":"pal","name":"Warm","colors":[{"hex":"#fa640a","name":"Orange"},{"hex":"#010203"}]},"layers":[{"id":"a","name":"Base","visible":true,"locked":false,"opacity":1,"pixels":"/wAA/wAAAAAAAAAAAAAAAACA/8gAAAAA"},{"id":"b","name":"Top","visible":false,"locked":true,"opacity":0.5,"pixels":"/wAA/wCA/8gAAAAAAAAAAAAAAAAAAAAA"}]}}';
+
+function animated(): Sprite {
+  const base = makeSprite(3, 2, [1, 2, 3, 4, 5]);
+  const layers = base.layers.map((layer) => {
+    const cels = [layer.buffer, layer.buffer.clone(), layer.buffer.clone()];
+    cels[1]?.set(0, 0, packRgba(9, 8, 7, 255));
+    cels[2]?.fill(0);
+    return { ...layer, cels };
+  });
+  return {
+    ...base,
+    layers,
+    frames: [
+      { id: 'f1', duration: 100 },
+      { id: 'f2', duration: 250 },
+      { id: 'f3', duration: 20 },
+    ],
+  };
+}
+
+describe('frames', () => {
+  it('round-trips frames, their durations and every cel', () => {
+    const sprite = animated();
+    const parsed = parseProject(serializeProject(sprite));
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    expect(parsed.value.frames).toEqual(sprite.frames);
+    sprite.layers.forEach((layer, index) => {
+      const other = parsed.value.layers[index];
+      expect(other?.cels).toHaveLength(3);
+      layer.cels.forEach((cel, frame) => {
+        expect(other?.cels[frame]?.equals(cel)).toBe(true);
+      });
+      expect(other?.buffer).toBe(other?.cels[0]);
+    });
+  });
+
+  it('opens a version 1 project as a one-frame animation', () => {
+    const parsed = parseProject(PROJECT_V1);
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    const sprite = parsed.value;
+    expect(sprite.id).toBe('sprite-fixture');
+    expect(sprite.name).toBe('Fixture ñ');
+    expect([sprite.width, sprite.height]).toEqual([3, 2]);
+    expect(sprite.frames).toEqual([{ id: 'frame-1', duration: 100 }]);
+    expect(sprite.layers.map((l) => [l.id, l.name, l.visible, l.locked, l.opacity])).toEqual([
+      ['a', 'Base', true, false, 1],
+      ['b', 'Top', false, true, 0.5],
+    ]);
+    expect(sprite.layers.every((l) => l.cels.length === 1 && l.buffer === l.cels[0])).toBe(true);
+    expect(sprite.palette.colors).toHaveLength(2);
+  });
+
+  it('upgrades a version 1 project to the same pixels it had', () => {
+    const old = JSON.parse(PROJECT_V1) as { sprite: { layers: { pixels: string }[] } };
+    const parsed = parseProject(PROJECT_V1);
+    const current = JSON.parse(serializeProject(parsed.ok ? parsed.value : animated())) as {
+      schemaVersion: number;
+      sprite: { layers: { cels: string[] }[] };
+    };
+    expect(current.schemaVersion).toBe(PROJECT_SCHEMA_VERSION);
+    expect(current.sprite.layers.map((l) => l.cels)).toEqual(
+      old.sprite.layers.map((l) => [l.pixels]),
+    );
+  });
+
+  it('rejects a layer with a different number of cels than frames', () => {
+    const data = JSON.parse(serializeProject(animated())) as {
+      sprite: { layers: { cels: string[] }[] };
+    };
+    data.sprite.layers[0]?.cels.pop();
+    expect(parseProject(JSON.stringify(data))).toMatchObject({
+      ok: false,
+      error: { reason: 'invalid' },
+    });
+  });
+
+  it('rejects repeated frame ids, bad durations and too many frames', () => {
+    const edit = (change: (sprite: { frames: { id: string; duration: number }[] }) => void) => {
+      const data = JSON.parse(serializeProject(animated())) as {
+        sprite: { frames: { id: string; duration: number }[] };
+      };
+      change(data.sprite);
+      const result = parseProject(JSON.stringify(data));
+      return result.ok ? 'ok' : result.error.reason;
+    };
+    expect(edit((s) => (s.frames[1] = { id: 'f1', duration: 100 }))).toBe('invalid');
+    expect(edit((s) => (s.frames[0] = { id: 'f1', duration: 5 }))).toBe('invalid');
+    expect(edit((s) => (s.frames[0] = { id: 'f1', duration: 20_000 }))).toBe('invalid');
+    expect(edit((s) => (s.frames[0] = { id: 'f1', duration: 10.5 }))).toBe('invalid');
+    expect(
+      edit((s) => {
+        s.frames = Array.from({ length: MAX_FRAMES + 1 }, (_, i) => ({
+          id: `x${String(i)}`,
+          duration: 100,
+        }));
+      }),
+    ).toBe('invalid');
+  });
+
+  it('refuses a project that would need more memory than the editor allows', () => {
+    const data = JSON.parse(serializeProject(animated())) as {
+      sprite: {
+        width: number;
+        height: number;
+        frames: { id: string; duration: number }[];
+        layers: { cels: string[] }[];
+      };
+    };
+    data.sprite.width = 1024;
+    data.sprite.height = 1024;
+    data.sprite.frames = Array.from({ length: 30 }, (_, i) => ({
+      id: `x${String(i)}`,
+      duration: 100,
+    }));
+    for (const layer of data.sprite.layers) layer.cels = data.sprite.frames.map(() => '');
+    expect(parseProject(JSON.stringify(data))).toMatchObject({
+      ok: false,
+      error: { reason: 'too-large' },
+    });
+  });
+});
+
+describe('version 1 projects that are damaged', () => {
+  const v1 = (): Record<string, unknown> => JSON.parse(PROJECT_V1) as Record<string, unknown>;
+  const reason = (value: unknown): string => {
+    const result = parseProject(JSON.stringify(value));
+    return result.ok ? 'ok' : result.error.reason;
+  };
+
+  it('are refused, not crashed on', () => {
+    expect(reason({ ...v1(), sprite: 5 })).toBe('invalid');
+    expect(reason({ ...v1(), sprite: { ...(v1().sprite as object), layers: 'x' } })).toBe(
+      'invalid',
+    );
+    expect(reason({ ...v1(), sprite: { ...(v1().sprite as object), layers: [7] } })).toBe(
+      'invalid',
+    );
   });
 });

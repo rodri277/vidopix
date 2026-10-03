@@ -10,11 +10,29 @@ export function compositeSprite(sprite: Sprite): PixelBuffer {
   return result;
 }
 
+/** One frame of the animation, with every visible layer flattened. */
+export function compositeFrame(sprite: Sprite, frame: number): PixelBuffer {
+  const result = PixelBuffer.create(sprite.width, sprite.height);
+  compositeRegion(
+    sprite,
+    result,
+    { x: 0, y: 0, width: sprite.width, height: sprite.height },
+    frame,
+  );
+  return result;
+}
+
 /**
  * Recomputes only `region` of `target` from the visible layers, so a small edit does not cost a
- * full composite. The region is clipped to the sprite.
+ * full composite. The region is clipped to the sprite. By default it uses each layer's pixels in
+ * the active frame; pass `frame` to use another one.
  */
-export function compositeRegion(sprite: Sprite, target: PixelBuffer, region: Rect): void {
+export function compositeRegion(
+  sprite: Sprite,
+  target: PixelBuffer,
+  region: Rect,
+  frame?: number,
+): void {
   const x0 = Math.max(0, region.x);
   const y0 = Math.max(0, region.y);
   const x1 = Math.min(sprite.width, region.x + region.width);
@@ -26,7 +44,8 @@ export function compositeRegion(sprite: Sprite, target: PixelBuffer, region: Rec
   }
   for (const layer of sprite.layers) {
     if (!layer.visible || layer.opacity <= 0) continue;
-    blendOnto(target, layer.buffer, layer.opacity, x0, y0, x1, y1);
+    const source = frame === undefined ? layer.buffer : (layer.cels[frame] ?? layer.buffer);
+    blendOnto(target, source, layer.opacity, x0, y0, x1, y1);
   }
 }
 

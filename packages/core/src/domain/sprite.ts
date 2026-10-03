@@ -5,6 +5,18 @@ import { MAX_CANVAS_SIZE, PixelBuffer } from './pixel-buffer.js';
 
 export type BlendMode = 'normal';
 
+/** Shortest and longest time a frame may be shown, in milliseconds. */
+export const MIN_FRAME_DURATION = 20;
+export const MAX_FRAME_DURATION = 10_000;
+export const DEFAULT_FRAME_DURATION = 100;
+export const MAX_FRAMES = 128;
+
+export interface Frame {
+  readonly id: string;
+  /** How long the frame is shown during playback, in milliseconds. */
+  readonly duration: number;
+}
+
 export interface Layer {
   readonly id: string;
   readonly name: string;
@@ -13,7 +25,10 @@ export interface Layer {
   /** From 0 (transparent) to 1 (opaque). */
   readonly opacity: number;
   readonly blendMode: BlendMode;
+  /** The layer's pixels in the active frame. Always the same object as `cels[activeFrame]`. */
   readonly buffer: PixelBuffer;
+  /** The layer's pixels in every frame, in frame order. */
+  readonly cels: readonly PixelBuffer[];
 }
 
 export interface Sprite {
@@ -23,6 +38,8 @@ export interface Sprite {
   readonly height: number;
   readonly layers: readonly Layer[];
   readonly palette: Palette;
+  /** The animation. A sprite always has at least one frame. */
+  readonly frames: readonly Frame[];
 }
 
 export interface SpriteOptions {
@@ -51,6 +68,7 @@ export function createSprite(
   }
 
   const id = ids.next();
+  const buffer = PixelBuffer.create(width, height);
   const layer: Layer = {
     id: ids.next(),
     name: 'Layer 1',
@@ -58,9 +76,11 @@ export function createSprite(
     locked: false,
     opacity: 1,
     blendMode: 'normal',
-    buffer: PixelBuffer.create(width, height),
+    buffer,
+    cels: [buffer],
   };
   const palette = createPalette(ids.next());
+  const frames: Frame[] = [{ id: ids.next(), duration: DEFAULT_FRAME_DURATION }];
   return ok({
     id,
     name: options.name ?? 'Untitled',
@@ -68,5 +88,6 @@ export function createSprite(
     height,
     layers: [layer],
     palette,
+    frames,
   });
 }

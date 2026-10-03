@@ -32,6 +32,7 @@ function makeSprite(width: number, height: number, seeds: number[], layerCount =
       opacity: index === 0 ? 1 : 0.4,
       blendMode: 'normal',
       buffer,
+      cels: [buffer],
     };
   });
   return {
@@ -40,6 +41,7 @@ function makeSprite(width: number, height: number, seeds: number[], layerCount =
     width,
     height,
     layers,
+    frames: [{ id: 'f', duration: 100 }],
     palette: createPalette('p', 'Warm', [
       { color: packRgba(250, 100, 10, 255), name: 'Orange' },
       { color: packRgba(1, 2, 3, 255) },
@@ -161,5 +163,121 @@ describe('share fragment', () => {
 
   it('exposes the character budget for links', () => {
     expect(SHARE_MAX_FRAGMENT_CHARS).toBeGreaterThan(1000);
+  });
+});
+
+/** A link made by version 1.0, before frames existed. It must keep opening. */
+const SHARE_V1 =
+  'VlABCkZpeHR1cmUgw7EDAAIABFdhcm0CAPpkCgZPcmFuZ2UBAgMAAgH/BEJhc2X/AAD/AAAAAAAAAAAAAAAAAID/yAAAAAACgANUb3D/AAD/AID/yAAAAAAAAAAAAAAAAAAAAAA=';
+
+function base64Bytes(text: string): Uint8Array {
+  return Uint8Array.from(atob(text), (c) => c.charCodeAt(0));
+}
+
+describe('share links with frames', () => {
+  const animated = (): Sprite => {
+    const base = makeSprite(3, 2, [3, 5, 7, 9]);
+    const layers = base.layers.map((layer) => {
+      const second = layer.buffer.clone();
+      second.set(2, 1, packRgba(1, 2, 3, 255));
+      return { ...layer, cels: [layer.buffer, second] };
+    });
+    return {
+      ...base,
+      layers,
+      frames: [
+        { id: 'a', duration: 80 },
+        { id: 'b', duration: 400 },
+      ],
+    };
+  };
+
+  it('round-trips frames, durations and the pixels of every cel', () => {
+    const sprite = animated();
+    const decoded = decodeShare(encodeShare(sprite), createSequentialIdGenerator());
+    expect(decoded.ok).toBe(true);
+    if (!decoded.ok) return;
+    expect(decoded.value.frames.map((f) => f.duration)).toEqual([80, 400]);
+    sprite.layers.forEach((layer, index) => {
+      const other = decoded.value.layers[index];
+      layer.cels.forEach((cel, frame) => {
+        expect(other?.cels[frame]?.equals(cel)).toBe(true);
+      });
+      expect(other?.buffer).toBe(other?.cels[0]);
+    });
+  });
+
+  it('gives every frame a distinct id', () => {
+    const decoded = decodeShare(encodeShare(animated()), createSequentialIdGenerator());
+    const ids = decoded.ok ? decoded.value.frames.map((f) => f.id) : [];
+    expect(new Set(ids).size).toBe(2);
+  });
+
+  it('opens a version 1 link as a one-frame animation', () => {
+    const decoded = decodeShare(base64Bytes(SHARE_V1), createSequentialIdGenerator());
+    expect(decoded.ok).toBe(true);
+    if (!decoded.ok) return;
+    expect(decoded.value.name).toBe('Fixture ñ');
+    expect([decoded.value.width, decoded.value.height]).toEqual([3, 2]);
+    expect(decoded.value.frames).toHaveLength(1);
+    expect(decoded.value.frames[0]?.duration).toBe(100);
+    expect(decoded.value.layers.map((l) => l.name)).toEqual(['Base', 'Top']);
+    expect(decoded.value.layers.every((l) => l.cels.length === 1)).toBe(true);
+  });
+
+  it('rejects an invalid frame count or duration', () => {
+    const bytes = encodeShare(animated());
+    // Find the frame table: it sits right before the layer count; patch the first duration.
+    const bad = Uint8Array.from(bytes);
+    const index = bytes.findIndex(
+      (_, i) => bytes[i] === 80 && bytes[i + 1] === 0 && bytes[i + 2] === 0x90,
+    );
+    expect(index).toBeGreaterThan(0);
+    bad[index] = 1;
+    bad[index + 1] = 0;
+    expect(decodeShare(bad, createSequentialIdGenerator())).toMatchObject({
+      ok: false,
+      error: { reason: 'invalid' },
+    });
+    const none = Uint8Array.from(bytes);
+    none[index - 1] = 0;
+    expect(decodeShare(none, createSequentialIdGenerator())).toMatchObject({
+      ok: false,
+      error: { reason: 'invalid' },
+    });
+  });
+
+  it('refuses links whose frames would unpack to too much data', () => {
+    const sprite = animated();
+    const wide = { ...sprite, width: 700, height: 700 };
+    const bytes = Uint8Array.from(encodeShare(wide).slice(0, 80));
+    const decoded = decodeShare(bytes, createSequentialIdGenerator());
+    expect(decoded.ok).toBe(false);
+  });
+});
+
+describe('share links with invalid headers', () => {
+  const make = (patch: (bytes: Uint8Array) => void): string => {
+    const bytes = Uint8Array.from(encodeShare(makeSprite(2, 2, [3, 5])));
+    patch(bytes);
+    const result = decodeShare(bytes, createSequentialIdGenerator());
+    return result.ok ? 'ok' : result.error.reason;
+  };
+
+  it('rejects impossible sizes, palettes and layer counts', () => {
+    // name: 1 length byte + utf8 "Héroe 🧙" (11 bytes); width/height follow.
+    const widthAt = 3 + 1 + 11;
+    expect(make((b) => (b[widthAt] = 0))).toBe('invalid');
+    expect(make((b) => (b[widthAt + 1] = 0xff))).toBe('invalid');
+    const paletteCountAt = widthAt + 4 + 1 + 4;
+    expect(make((b) => (b[paletteCountAt + 1] = 0xff))).toBe('invalid');
+  });
+
+  it('rejects a link with no layers', () => {
+    const sprite = makeSprite(1, 1, [3], 1);
+    const bytes = Uint8Array.from(encodeShare({ ...sprite, palette: createPalette('p') }));
+    const layerCountAt = bytes.length - (1 + 1 + 1 + 'Fondo ñ'.length + 1 + 4) - 1;
+    bytes[layerCountAt] = 0;
+    expect(decodeShare(bytes, createSequentialIdGenerator())).toMatchObject({ ok: false });
   });
 });

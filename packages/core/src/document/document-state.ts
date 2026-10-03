@@ -9,6 +9,8 @@ import type { Layer, Sprite } from '../domain/sprite.js';
 export interface DocumentState {
   readonly sprite: Sprite;
   readonly activeLayerId: string;
+  /** Index of the frame being edited. Every layer's `buffer` is its cel for this frame. */
+  readonly activeFrame: number;
   /** Selected area in document pixels, or null when nothing is selected. */
   readonly selection: Rect | null;
 }

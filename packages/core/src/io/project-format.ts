@@ -6,15 +6,24 @@ import {
   createPalette,
   paletteColor,
 } from '../domain/palette.js';
-import { MAX_CANVAS_SIZE } from '../domain/pixel-buffer.js';
-import type { Layer, Sprite } from '../domain/sprite.js';
+import { MAX_SPRITE_BYTES } from '../document/frame-ops.js';
+import { MAX_CANVAS_SIZE, type PixelBuffer } from '../domain/pixel-buffer.js';
+import {
+  DEFAULT_FRAME_DURATION,
+  MAX_FRAMES,
+  MAX_FRAME_DURATION,
+  MIN_FRAME_DURATION,
+  type Frame,
+  type Layer,
+  type Sprite,
+} from '../domain/sprite.js';
 import { err, ok, type Result } from '../result.js';
 import { base64ToBytes, bytesToBase64 } from './bytes.js';
 import { bytesToPixels, pixelsToBytes } from './pixel-bytes.js';
 
 /** The `.vidopix` file format: a JSON document with the layers' pixels as base64 RGBA bytes. */
 export const PROJECT_FORMAT = 'vidopix';
-export const PROJECT_SCHEMA_VERSION = 1;
+export const PROJECT_SCHEMA_VERSION = 2;
 export const MAX_PROJECT_BYTES = 20 * 1024 * 1024;
 export const MAX_PROJECT_LAYERS = 64;
 const NAME_LENGTH = 60;
@@ -31,8 +40,35 @@ export type Migrations = Readonly<
   Record<number, (data: Record<string, unknown>) => Record<string, unknown>>
 >;
 
-/** No older versions exist yet. When the schema changes, add the step here and bump the version. */
-export const MIGRATIONS: Migrations = {};
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
+/**
+ * Version 1 had one image per layer. Version 2 has frames: a list of frames, and one image
+ * ("cel") per layer for each of them. A version 1 project becomes a one-frame animation.
+ */
+function upgradeLayerV1(layer: unknown): unknown {
+  if (!isRecord(layer)) return layer;
+  const { pixels, ...rest } = layer;
+  return { ...rest, cels: [pixels] };
+}
+
+function upgradeV1(data: Record<string, unknown>): Record<string, unknown> {
+  const sprite = data.sprite;
+  if (!isRecord(sprite)) return data;
+  const { layers } = sprite;
+  return {
+    ...data,
+    sprite: {
+      ...sprite,
+      frames: [{ id: 'frame-1', duration: DEFAULT_FRAME_DURATION }],
+      layers: Array.isArray(layers) ? (layers as unknown[]).map(upgradeLayerV1) : layers,
+    },
+  };
+}
+
+/** Upgrade steps, keyed by the version they upgrade from. Bump the version when adding one. */
+export const MIGRATIONS: Migrations = { 1: upgradeV1 };
 
 const projectSchema = z.object({
   format: z.literal(PROJECT_FORMAT),
@@ -54,6 +90,15 @@ const projectSchema = z.object({
         )
         .max(MAX_PALETTE_COLORS),
     }),
+    frames: z
+      .array(
+        z.object({
+          id: z.string().min(1).max(100),
+          duration: z.number().int().min(MIN_FRAME_DURATION).max(MAX_FRAME_DURATION),
+        }),
+      )
+      .min(1)
+      .max(MAX_FRAMES),
     layers: z
       .array(
         z.object({
@@ -62,7 +107,7 @@ const projectSchema = z.object({
           visible: z.boolean(),
           locked: z.boolean(),
           opacity: z.number().min(0).max(1),
-          pixels: z.string(),
+          cels: z.array(z.string()).min(1).max(MAX_FRAMES),
         }),
       )
       .min(1)
@@ -95,13 +140,14 @@ export function serializeProject(sprite: Sprite): string {
           name === undefined ? { hex: toHex(color) } : { hex: toHex(color), name },
         ),
       },
+      frames: sprite.frames.map(({ id, duration }) => ({ id, duration })),
       layers: sprite.layers.map((layer) => ({
         id: layer.id,
         name: layer.name,
         visible: layer.visible,
         locked: layer.locked,
         opacity: layer.opacity,
-        pixels: bytesToBase64(pixelsToBytes(layer.buffer)),
+        cels: layer.cels.map((cel) => bytesToBase64(pixelsToBytes(cel))),
       })),
     },
   });
@@ -161,18 +207,35 @@ export function parseProject(
   const ids = new Set<string>();
   const layers: Layer[] = [];
   const expectedBytes = sprite.width * sprite.height * 4;
+  const frameIds = new Set(sprite.frames.map((frame) => frame.id));
+  if (frameIds.size !== sprite.frames.length) return failure('invalid', 'Two frames share an id');
+  if (expectedBytes * sprite.layers.length * sprite.frames.length > MAX_SPRITE_BYTES) {
+    return failure('too-large', 'This project needs more memory than Vidopix will use');
+  }
   for (const layer of sprite.layers) {
     if (ids.has(layer.id)) return failure('invalid', `Two layers share the id ${layer.id}`);
     ids.add(layer.id);
-    const bytes = base64ToBytes(layer.pixels);
-    if (!bytes)
-      return failure('pixels', `The pixels of layer "${layer.name}" are not valid base64`);
-    if (bytes.length !== expectedBytes) {
+    if (layer.cels.length !== sprite.frames.length) {
       return failure(
-        'pixels',
-        `Layer "${layer.name}" has ${String(bytes.length)} bytes of pixels, expected ${String(expectedBytes)}`,
+        'invalid',
+        `Layer "${layer.name}" has ${String(layer.cels.length)} images for ${String(sprite.frames.length)} frames`,
       );
     }
+    const cels: PixelBuffer[] = [];
+    for (const cel of layer.cels) {
+      const bytes = base64ToBytes(cel);
+      if (!bytes)
+        return failure('pixels', `The pixels of layer "${layer.name}" are not valid base64`);
+      if (bytes.length !== expectedBytes) {
+        return failure(
+          'pixels',
+          `Layer "${layer.name}" has ${String(bytes.length)} bytes of pixels, expected ${String(expectedBytes)}`,
+        );
+      }
+      cels.push(bytesToPixels(bytes, sprite.width, sprite.height));
+    }
+    const [first] = cels;
+    if (!first) return failure('invalid', `Layer "${layer.name}" has no images`);
     layers.push({
       id: layer.id,
       name: layer.name,
@@ -180,9 +243,11 @@ export function parseProject(
       locked: layer.locked,
       opacity: layer.opacity,
       blendMode: 'normal',
-      buffer: bytesToPixels(bytes, sprite.width, sprite.height),
+      buffer: first,
+      cels,
     });
   }
+  const frames: Frame[] = sprite.frames.map(({ id, duration }) => ({ id, duration }));
 
   const colors = sprite.palette.colors.map(({ hex, name }) => {
     const color = parseHex(hex);
@@ -194,6 +259,7 @@ export function parseProject(
     width: sprite.width,
     height: sprite.height,
     layers,
+    frames,
     palette: createPalette(sprite.palette.id, sprite.palette.name, colors),
   });
 }

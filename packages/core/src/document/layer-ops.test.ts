@@ -22,7 +22,10 @@ function setup(): { state: DocumentState; ids: ReturnType<typeof createSequentia
   if (!sprite.ok) throw new Error('sprite');
   const first = sprite.value.layers[0];
   if (!first) throw new Error('layer');
-  return { state: { sprite: sprite.value, activeLayerId: first.id, selection: null }, ids };
+  return {
+    state: { sprite: sprite.value, activeLayerId: first.id, activeFrame: 0, selection: null },
+    ids,
+  };
 }
 
 const names = (state: DocumentState): string[] => state.sprite.layers.map((layer) => layer.name);
