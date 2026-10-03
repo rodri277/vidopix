@@ -28,18 +28,18 @@ flowchart LR
 
 Arrows only go down into the core or come out of it as events. The core never knows about React or the browser.
 
-## Current state (Phase 0)
+## Current state (Phase 1)
 
-Only the foundations exist: `Color` (packed RGBA, hex parsing) in the core and the empty UI shell in the web app. The rest of the diagram is the target for Phases 1 to 5.
+The engine in `packages/core` has the document model, algorithms, tools, history, color math, export and viewport math. `apps/web` has the Canvas 2D renderer, pointer and keyboard input, the menus, panels and dialogs. Layers beyond one, selections, palettes, persistence and animation arrive in later phases.
 
-## Lifecycle of a stroke (target)
+## Lifecycle of a stroke
 
-1. The canvas adapter receives Pointer Events and converts screen coordinates to document pixels.
+1. The pointer adapter receives Pointer Events (including coalesced samples, with pointer capture) and converts screen coordinates to document pixels using the renderer's whole-number scale.
 2. `EditorSession` forwards the event to the active tool.
-3. The tool changes pixels through an open command that accumulates the stroke patch.
+3. The tool writes pixels through a `PatchRecorder`, which remembers the original color of each pixel; successive samples are joined with Bresenham so fast moves leave no gaps.
 4. The session emits `documentChanged` with the dirty rectangle.
-5. The renderer recomposes only that area on the next `requestAnimationFrame`.
-6. On `pointerup` the command closes and enters history as a single operation.
+5. The renderer recomposes only that area (`compositeRegion`) and redraws it on the next `requestAnimationFrame`.
+6. On `pointerup` the recorder closes into a `PixelPatch` and enters the history as a single command (ADR 004).
 
 ## Boundaries enforced in CI
 
@@ -48,3 +48,7 @@ Only the foundations exist: `Color` (packed RGBA, hex parsing) in the core and t
 - No circular dependencies.
 
 Run them with `pnpm lint`. `tools/check-boundaries.test.mjs` verifies that the rules do fail on violations.
+
+## Keyboard drawing
+
+The canvas is a focusable widget. Arrow keys move a pixel cursor (Alt moves 8 pixels), and holding Enter behaves like pressing the primary mouse button: it starts a stroke, arrow keys extend it, releasing Enter ends it. Escape cancels the stroke. This goes through the same `EditorSession` calls as the mouse.

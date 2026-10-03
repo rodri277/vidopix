@@ -4,13 +4,36 @@
 
 Un editor de pixel art que funciona en el navegador: sin instalar nada, sin cuenta y con un generador de paletas integrado.
 
-> **Estado:** Fase 0 (cimientos). El editor llega en la Fase 1. Las capturas, el enlace a la demo y las métricas de rendimiento medidas se añadirán al cerrar cada fase.
+> **Estado:** Fase 1 (editor base, v0.1.0). Las capas, las selecciones y las paletas llegan en las siguientes fases. El enlace a la demo y las capturas se añadirán cuando la app esté desplegada.
 
 ## Objetivos
 
 - Ser la pieza principal de un portfolio: arquitectura, algoritmos, rendimiento y diseño de producto.
 - Ser usable de verdad: un artista debe poder hacer un sprite de 64×64 de principio a fin y exportarlo.
 - Cargar rápido y, desde la Fase 4, funcionar sin conexión.
+
+## Qué hace hoy
+
+- Lápiz, goma (1 a 16 px), cubo (contiguo o global, con tolerancia), cuentagotas, línea, rectángulo y elipse. Con Shift las líneas se limitan a 0/45/90 grados y las formas a cuadrados y círculos.
+- Zoom entero de 1× a 64× anclado al puntero, desplazamiento, cuadrícula de píxeles y damero de transparencia.
+- Colores primario y secundario con hex y deslizadores OKLCH.
+- Deshacer y rehacer que nunca se quedan sin pasos, solo sin presupuesto de memoria (64 MB por defecto).
+- Exportación a PNG de 1× a 32×.
+- Se puede usar entera con teclado: las flechas mueven un cursor de píxel y mantener Enter dibuja.
+
+## Rendimiento medido
+
+Cifras de los benchmarks y del E2E de este repositorio, en la máquina del autor (Mac con Apple silicon, Chromium sin interfaz). No son estimaciones: ejecuta `pnpm bench` y `pnpm e2e` para reproducirlas en la tuya.
+
+| Métrica                                         | Objetivo        | Medido                                |
+| ----------------------------------------------- | --------------- | ------------------------------------- |
+| Relleno de 1024×1024, solo el algoritmo         | < 50 ms         | unos 12 ms                            |
+| Relleno de 1024×1024, con el parche de deshacer | < 50 ms         | unos 34 ms                            |
+| Tiempo por fotograma al dibujar en 256×256      | 60 fps          | 16,7 ms de media (limitado por vsync) |
+| 500 trazos deshechos y rehechos en 256×256      | dentro de 64 MB | pasa (test unitario)                  |
+| JavaScript inicial (gzip)                       | < 150 kB        | 88 kB                                 |
+
+Las puntuaciones de Lighthouse todavía no se han medido.
 
 ## Stack
 
