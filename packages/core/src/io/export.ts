@@ -1,5 +1,6 @@
 import { packRgba, unpackRgba, type Color } from '../domain/color.js';
 import { PixelBuffer } from '../domain/pixel-buffer.js';
+import type { Rect } from '../domain/rect.js';
 import type { Sprite } from '../domain/sprite.js';
 import { err, ok, type Result } from '../result.js';
 
@@ -36,32 +37,61 @@ export interface ExportImage {
 /** Flattens the visible layers, bottom to top, into one buffer. */
 export function compositeSprite(sprite: Sprite): PixelBuffer {
   const result = PixelBuffer.create(sprite.width, sprite.height);
-  for (const layer of sprite.layers) {
-    if (!layer.visible || layer.opacity <= 0) continue;
-    blendOnto(result, layer.buffer, layer.opacity);
-  }
+  compositeRegion(sprite, result, { x: 0, y: 0, width: sprite.width, height: sprite.height });
   return result;
 }
 
-function blendOnto(target: PixelBuffer, source: PixelBuffer, opacity: number): void {
+/**
+ * Recomputes only `region` of `target` from the visible layers, so a small edit does not cost a
+ * full composite. The region is clipped to the sprite.
+ */
+export function compositeRegion(sprite: Sprite, target: PixelBuffer, region: Rect): void {
+  const x0 = Math.max(0, region.x);
+  const y0 = Math.max(0, region.y);
+  const x1 = Math.min(sprite.width, region.x + region.width);
+  const y1 = Math.min(sprite.height, region.y + region.height);
+  if (x1 <= x0 || y1 <= y0) return;
+
+  for (let y = y0; y < y1; y++) {
+    target.data.fill(0, y * sprite.width + x0, y * sprite.width + x1);
+  }
+  for (const layer of sprite.layers) {
+    if (!layer.visible || layer.opacity <= 0) continue;
+    blendOnto(target, layer.buffer, layer.opacity, x0, y0, x1, y1);
+  }
+}
+
+function blendOnto(
+  target: PixelBuffer,
+  source: PixelBuffer,
+  opacity: number,
+  x0 = 0,
+  y0 = 0,
+  x1 = target.width,
+  y1 = target.height,
+): void {
   const out = target.data;
   const input = source.data;
-  for (let i = 0; i < input.length; i++) {
-    const src = input[i] ?? 0;
-    if (src >>> 24 === 0) continue;
-    const dst = out[i] ?? 0;
-    if (dst >>> 24 === 0 && opacity === 1) {
-      out[i] = src;
-      continue;
+  const width = target.width;
+  for (let y = y0; y < y1; y++) {
+    for (let x = x0; x < x1; x++) {
+      const i = y * width + x;
+      const src = input[i] ?? 0;
+      if (src >>> 24 === 0) continue;
+      const dst = out[i] ?? 0;
+      if (dst >>> 24 === 0 && opacity === 1) {
+        out[i] = src;
+        continue;
+      }
+      const s = unpackRgba(src);
+      const d = unpackRgba(dst);
+      const sa = (s.a / 255) * opacity;
+      const da = d.a / 255;
+      const outAlpha = sa + da * (1 - sa);
+      const mix = (sc: number, dc: number): number =>
+        Math.round((sc * sa + dc * da * (1 - sa)) / outAlpha);
+      out[i] = packRgba(mix(s.r, d.r), mix(s.g, d.g), mix(s.b, d.b), Math.round(outAlpha * 255));
     }
-    const s = unpackRgba(src);
-    const d = unpackRgba(dst);
-    const sa = (s.a / 255) * opacity;
-    const da = d.a / 255;
-    const outAlpha = sa + da * (1 - sa);
-    const mix = (sc: number, dc: number): number =>
-      Math.round((sc * sa + dc * da * (1 - sa)) / outAlpha);
-    out[i] = packRgba(mix(s.r, d.r), mix(s.g, d.g), mix(s.b, d.b), Math.round(outAlpha * 255));
   }
 }
 

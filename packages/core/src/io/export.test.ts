@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { packRgba, unpackRgba } from '../domain/color.js';
 import { PixelBuffer } from '../domain/pixel-buffer.js';
 import type { Layer, Sprite } from '../domain/sprite.js';
-import { compositeSprite, exportSprite, MAX_EXPORT_DIMENSION } from './export.js';
+import { compositeRegion, compositeSprite, exportSprite, MAX_EXPORT_DIMENSION } from './export.js';
 
 const RED = packRgba(255, 0, 0, 255);
 const BLUE = packRgba(0, 0, 255, 255);
@@ -70,6 +70,55 @@ describe('compositeSprite', () => {
     expect(r).toBeGreaterThan(100);
     expect(b).toBeGreaterThan(100);
     expect(g).toBe(0);
+  });
+});
+
+describe('compositeRegion', () => {
+  it('recomputes only the requested region', () => {
+    const buffer = PixelBuffer.create(4, 4);
+    const sprite = spriteOf(4, 4, layer(buffer));
+    const target = compositeSprite(sprite);
+
+    buffer.set(1, 1, RED);
+    buffer.set(3, 3, BLUE);
+    compositeRegion(sprite, target, { x: 0, y: 0, width: 2, height: 2 });
+
+    expect(target.get(1, 1)).toBe(RED);
+    expect(target.get(3, 3)).toBe(0);
+  });
+
+  it('clears pixels that were erased inside the region', () => {
+    const buffer = PixelBuffer.create(3, 1);
+    buffer.fill(RED);
+    const sprite = spriteOf(3, 1, layer(buffer));
+    const target = compositeSprite(sprite);
+    buffer.set(1, 0, 0);
+    compositeRegion(sprite, target, { x: 1, y: 0, width: 1, height: 1 });
+    expect([...target.data]).toEqual([RED, 0, RED]);
+  });
+
+  it('matches a full composite for any region that covers the changes', () => {
+    const bottom = PixelBuffer.create(6, 6);
+    bottom.fill(RED);
+    const top = PixelBuffer.create(6, 6);
+    const sprite = spriteOf(6, 6, layer(bottom), layer(top, { opacity: 0.5 }));
+    const target = compositeSprite(sprite);
+    top.set(2, 3, BLUE);
+    top.set(4, 4, BLUE);
+    compositeRegion(sprite, target, { x: 2, y: 3, width: 3, height: 2 });
+    expect(target.equals(compositeSprite(sprite))).toBe(true);
+  });
+
+  it('clips regions that extend past the sprite and ignores empty ones', () => {
+    const buffer = PixelBuffer.create(2, 2);
+    buffer.fill(RED);
+    const sprite = spriteOf(2, 2, layer(buffer));
+    const target = PixelBuffer.create(2, 2);
+    compositeRegion(sprite, target, { x: -5, y: -5, width: 100, height: 100 });
+    expect(target.equals(buffer)).toBe(true);
+    const untouched = PixelBuffer.create(2, 2);
+    compositeRegion(sprite, untouched, { x: 5, y: 5, width: 2, height: 2 });
+    expect(untouched.data.every((value) => value === 0)).toBe(true);
   });
 });
 

@@ -31,6 +31,7 @@ export {
   MAX_EXPORT_DIMENSION,
   MAX_EXPORT_SCALE,
   MIN_EXPORT_SCALE,
+  compositeRegion,
   compositeSprite,
   exportSprite,
 } from './io/export.js';
