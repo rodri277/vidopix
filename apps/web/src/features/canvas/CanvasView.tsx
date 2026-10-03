@@ -123,9 +123,21 @@ export function CanvasView() {
 
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>): void => {
     const arrow = ARROWS[event.key];
+    const state = store.getState();
+    if (state.hasFloating && event.key === 'Enter') {
+      event.preventDefault();
+      state.commitFloating();
+      return;
+    }
+    if (arrow && (state.hasFloating || state.tool === 'move')) {
+      // Arrow keys carry the selected pixels (or the whole layer) instead of the pixel cursor.
+      event.preventDefault();
+      const step = event.altKey ? KEYBOARD_BIG_STEP : KEYBOARD_STEP;
+      session.document.nudge(arrow[0] * step, arrow[1] * step);
+      return;
+    }
     if (arrow) {
       event.preventDefault();
-      const state = store.getState();
       const step = event.altKey ? KEYBOARD_BIG_STEP : KEYBOARD_STEP;
       const current = keyboardPosition();
       const x = Math.min(state.spriteWidth - 1, Math.max(0, current.x + arrow[0] * step));
@@ -161,7 +173,7 @@ export function CanvasView() {
       className={styles.viewport}
       data-pan={panMode}
       role="application"
-      aria-label="Drawing canvas. Arrow keys move the pixel cursor, Alt with arrows moves 8 pixels, hold Enter to draw."
+      aria-label="Drawing canvas. Arrow keys move the pixel cursor, Alt with arrows moves 8 pixels, hold Enter to draw. With the Move tool, arrow keys move the selected pixels."
       // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- same reason as above
       tabIndex={0}
       onKeyDown={onKeyDown}

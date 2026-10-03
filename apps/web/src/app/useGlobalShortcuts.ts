@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { imageFromPasteEvent } from '../adapters/system-clipboard';
 import { isMacPlatform, isTextEntry, resolveShortcut } from '../state/shortcuts';
 import type { EditorStore } from '../state/editor-store';
 import type { EditorSession } from '@vidopix/core';
@@ -56,6 +57,17 @@ export function useGlobalShortcuts(session: EditorSession, store: EditorStore): 
 
       const action = resolveShortcut(event, isMac);
       if (!action) return;
+      if (action.type === 'commit' && !state.hasFloating) return;
+      const onControl = event.target instanceof HTMLElement ? event.target : null;
+      if (
+        (action.type === 'commit' || action.type === 'delete-selection') &&
+        onControl?.closest('button, a') !== null &&
+        onControl !== null
+      ) {
+        return;
+      }
+      // The canvas handles Enter itself (it also draws with it).
+      if (action.type === 'commit' && onControl?.closest('[role="application"]')) return;
       event.preventDefault();
       switch (action.type) {
         case 'tool':
@@ -98,7 +110,37 @@ export function useGlobalShortcuts(session: EditorSession, store: EditorStore): 
           state.openDialog('export');
           break;
         case 'cancel':
-          session.cancelStroke();
+          session.cancelAction();
+          break;
+        case 'select-all':
+          state.selectAll();
+          break;
+        case 'deselect':
+          state.deselect();
+          break;
+        case 'delete-selection':
+          state.deleteSelection();
+          break;
+        case 'copy':
+          state.copy();
+          break;
+        case 'cut':
+          state.cut();
+          break;
+        case 'new-layer':
+          state.addLayer();
+          break;
+        case 'duplicate-layer':
+          state.duplicateLayer();
+          break;
+        case 'layer-up':
+          state.shiftActiveLayer(1);
+          break;
+        case 'layer-down':
+          state.shiftActiveLayer(-1);
+          break;
+        case 'commit':
+          if (state.hasFloating) state.commitFloating();
           break;
       }
     };
@@ -113,10 +155,25 @@ export function useGlobalShortcuts(session: EditorSession, store: EditorStore): 
       endAlt();
     };
 
+    const onPaste = (event: ClipboardEvent): void => {
+      if (isTextEntry(event.target) || store.getState().dialog !== null) return;
+      event.preventDefault();
+      void imageFromPasteEvent(event)
+        .then((image) => {
+          if (image) store.getState().pasteImage(image);
+          else store.getState().pasteInternal();
+        })
+        .catch(() => {
+          store.getState().pasteInternal();
+        });
+    };
+
+    window.addEventListener('paste', onPaste);
     window.addEventListener('keydown', onKeyDown);
     window.addEventListener('keyup', onKeyUp);
     window.addEventListener('blur', onBlur);
     return () => {
+      window.removeEventListener('paste', onPaste);
       window.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('keyup', onKeyUp);
       window.removeEventListener('blur', onBlur);

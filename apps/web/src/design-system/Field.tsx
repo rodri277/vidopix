@@ -26,9 +26,20 @@ interface SliderProps {
   /** Text shown next to the slider, for example "45 deg". */
   readonly display?: string;
   readonly onChange: (value: number) => void;
+  /** Called once when a drag or key press ends, with the final value. */
+  readonly onCommit?: (value: number) => void;
 }
 
-export function Slider({ label, value, min, max, step = 1, display, onChange }: SliderProps) {
+export function Slider({
+  label,
+  value,
+  min,
+  max,
+  step = 1,
+  display,
+  onChange,
+  onCommit,
+}: SliderProps) {
   const id = useId();
   return (
     <div className={cx(styles.field, styles.inline)}>
@@ -44,6 +55,17 @@ export function Slider({ label, value, min, max, step = 1, display, onChange }: 
         aria-valuetext={display}
         onChange={(event) => {
           onChange(Number(event.target.value));
+        }}
+        onPointerUp={(event) => {
+          onCommit?.(Number(event.currentTarget.value));
+        }}
+        onKeyUp={(event) => {
+          if (
+            event.key.startsWith('Arrow') ||
+            ['Home', 'End', 'PageUp', 'PageDown'].includes(event.key)
+          ) {
+            onCommit?.(Number(event.currentTarget.value));
+          }
         }}
       />
       <span className={styles.value} aria-hidden="true">

@@ -14,7 +14,17 @@ export type ShortcutAction =
   | { readonly type: 'toggle-panels' }
   | { readonly type: 'new-sprite' }
   | { readonly type: 'export' }
-  | { readonly type: 'cancel' };
+  | { readonly type: 'cancel' }
+  | { readonly type: 'select-all' }
+  | { readonly type: 'deselect' }
+  | { readonly type: 'delete-selection' }
+  | { readonly type: 'copy' }
+  | { readonly type: 'cut' }
+  | { readonly type: 'new-layer' }
+  | { readonly type: 'duplicate-layer' }
+  | { readonly type: 'commit' }
+  | { readonly type: 'layer-up' }
+  | { readonly type: 'layer-down' };
 
 export interface KeyInput {
   readonly key: string;
@@ -32,6 +42,8 @@ const TOOL_KEYS: Readonly<Record<string, ToolId>> = {
   l: 'line',
   u: 'rectangle',
   o: 'ellipse',
+  m: 'select',
+  v: 'move',
 };
 
 /** Ctrl on Windows and Linux, Cmd on macOS. */
@@ -50,7 +62,14 @@ export function resolveShortcut(input: KeyInput, isMac: boolean): ShortcutAction
     if (key === 'z') return { type: input.shiftKey ? 'redo' : 'undo' };
     if (key === 'y') return { type: 'redo' };
     if (input.altKey) return null;
-    if (key === 'n') return { type: 'new-sprite' };
+    if (key === 'n') return { type: input.shiftKey ? 'new-layer' : 'new-sprite' };
+    if (key === 'a') return { type: 'select-all' };
+    if (key === 'd') return { type: 'deselect' };
+    if (key === 'c') return { type: 'copy' };
+    if (key === 'x') return { type: 'cut' };
+    if (key === 'j') return { type: 'duplicate-layer' };
+    if (key === ']') return { type: 'layer-up' };
+    if (key === '[') return { type: 'layer-down' };
     if (key === 'e') return { type: 'export' };
     if (key === "'") return { type: 'toggle-grid' };
     if (key === '\\') return { type: 'toggle-panels' };
@@ -59,6 +78,8 @@ export function resolveShortcut(input: KeyInput, isMac: boolean): ShortcutAction
 
   if (input.altKey) return null;
   if (key === 'Escape') return { type: 'cancel' };
+  if (key === 'Delete' || key === 'Backspace') return { type: 'delete-selection' };
+  if (key === 'Enter') return { type: 'commit' };
   const tool = TOOL_KEYS[key];
   if (tool) return { type: 'tool', tool };
   switch (key) {

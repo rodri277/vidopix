@@ -23,7 +23,7 @@ export function AppLayout({ menu, options, tools, canvas, side, status, panelsHi
         {tools}
       </nav>
       <main className={styles.canvas}>{canvas}</main>
-      <aside className={styles.side} aria-label="Color">
+      <aside className={styles.side} aria-label="Layers and color">
         {side}
       </aside>
       <footer className={styles.status}>{status}</footer>

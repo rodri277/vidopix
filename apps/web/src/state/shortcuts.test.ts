@@ -19,6 +19,8 @@ describe('resolveShortcut', () => {
     ['l', 'line'],
     ['u', 'rectangle'],
     ['o', 'ellipse'],
+    ['m', 'select'],
+    ['v', 'move'],
   ])('selects a tool with %s', (letter, tool) => {
     expect(resolveShortcut(key(letter), false)).toEqual({ type: 'tool', tool });
     expect(resolveShortcut(key(letter.toUpperCase()), false)).toEqual({ type: 'tool', tool });
@@ -57,6 +59,25 @@ describe('resolveShortcut', () => {
     expect(resolveShortcut(key('\\', { ctrlKey: true }), false)).toEqual({
       type: 'toggle-panels',
     });
+  });
+
+  it('maps selection, clipboard and layer shortcuts', () => {
+    const mod = { ctrlKey: true };
+    expect(resolveShortcut(key('a', mod), false)).toEqual({ type: 'select-all' });
+    expect(resolveShortcut(key('d', mod), false)).toEqual({ type: 'deselect' });
+    expect(resolveShortcut(key('c', mod), false)).toEqual({ type: 'copy' });
+    expect(resolveShortcut(key('x', mod), false)).toEqual({ type: 'cut' });
+    expect(resolveShortcut(key('j', mod), false)).toEqual({ type: 'duplicate-layer' });
+    expect(resolveShortcut(key('N', { ...mod, shiftKey: true }), false)).toEqual({
+      type: 'new-layer',
+    });
+    expect(resolveShortcut(key(']', mod), false)).toEqual({ type: 'layer-up' });
+    expect(resolveShortcut(key('[', mod), false)).toEqual({ type: 'layer-down' });
+    expect(resolveShortcut(key('Delete'), false)).toEqual({ type: 'delete-selection' });
+    expect(resolveShortcut(key('Backspace'), false)).toEqual({ type: 'delete-selection' });
+    expect(resolveShortcut(key('Enter'), false)).toEqual({ type: 'commit' });
+    // Paste is left to the browser's paste event, which can read images without a prompt.
+    expect(resolveShortcut(key('v', mod), false)).toBeNull();
   });
 
   it('does not steal browser shortcuts or Alt combinations', () => {

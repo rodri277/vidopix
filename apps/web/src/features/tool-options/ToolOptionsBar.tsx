@@ -55,7 +55,30 @@ export function ToolOptionsBar() {
   );
 
   if (tool === 'pencil' || tool === 'eraser' || tool === 'line') {
-    return <div className={styles.group}>{brush}</div>;
+    return (
+      <div className={styles.group}>
+        {brush}
+        {tool === 'line' ? <p className={styles.hint}>Hold Shift for 0, 45 or 90 degrees</p> : null}
+      </div>
+    );
+  }
+
+  if (tool === 'select') {
+    return (
+      <p className={styles.hint}>
+        Drag to select a rectangle, Shift for a square. Click to deselect. Drawing stays inside the
+        selection.
+      </p>
+    );
+  }
+
+  if (tool === 'move') {
+    return (
+      <p className={styles.hint}>
+        Drag the selection to move its pixels (the whole layer if nothing is selected). Enter drops
+        them, Esc cancels.
+      </p>
+    );
   }
 
   if (tool === 'fill') {

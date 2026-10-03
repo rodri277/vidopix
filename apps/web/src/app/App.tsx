@@ -3,6 +3,7 @@ import { AppLayout } from '../design-system/AppLayout';
 import { Announcer } from '../features/a11y/Announcer';
 import { CanvasView } from '../features/canvas/CanvasView';
 import { ColorPanel } from '../features/color/ColorPanel';
+import { LayersPanel } from '../features/layers/LayersPanel';
 import { Dialogs } from '../features/dialogs/Dialogs';
 import { AppMenu } from '../features/menu/AppMenu';
 import { StatusBar } from '../features/statusbar/StatusBar';
@@ -28,7 +29,12 @@ function Editor({ session, store }: Props) {
         options={<ToolOptionsBar />}
         tools={<Toolbar />}
         canvas={<CanvasView />}
-        side={<ColorPanel />}
+        side={
+          <>
+            <LayersPanel />
+            <ColorPanel />
+          </>
+        }
         status={<StatusBar />}
       />
       <Dialogs />
