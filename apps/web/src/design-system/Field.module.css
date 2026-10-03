@@ -1,5 +1,6 @@
 .field {
   display: flex;
+  white-space: nowrap;
   flex-direction: column;
   gap: var(--space-1);
   color: var(--text-muted);
@@ -34,7 +35,8 @@
 }
 
 .value {
-  min-width: 3ch;
+  min-width: 6ch;
+  white-space: nowrap;
   color: var(--text);
   font-family: var(--font-mono);
   text-align: right;

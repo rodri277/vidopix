@@ -41,13 +41,14 @@ export function Slider({ label, value, min, max, step = 1, display, onChange }: 
         max={max}
         step={step}
         value={value}
+        aria-valuetext={display}
         onChange={(event) => {
           onChange(Number(event.target.value));
         }}
       />
-      <output htmlFor={id} className={styles.value}>
+      <span className={styles.value} aria-hidden="true">
         {display ?? String(value)}
-      </output>
+      </span>
     </div>
   );
 }

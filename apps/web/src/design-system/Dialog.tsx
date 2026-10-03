@@ -39,7 +39,7 @@ export function Dialog({ title, onClose, onSubmit, footer, children }: Props) {
         onClose();
       }}
     >
-      <form className={styles.form} onSubmit={handleSubmit}>
+      <form className={styles.form} onSubmit={handleSubmit} noValidate>
         <h2 id={titleId} className={styles.title}>
           {title}
         </h2>

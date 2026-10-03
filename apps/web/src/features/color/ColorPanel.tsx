@@ -95,6 +95,8 @@ function ColorEditor({ slot }: { readonly slot: ColorSlot }) {
           if (event.key === 'Enter') {
             event.preventDefault();
             commitHex();
+            // Leave the field so the tool shortcuts work again right away.
+            event.currentTarget.blur();
           }
         }}
       />
