@@ -9,7 +9,11 @@ interface TouchPoint {
   id: number;
 }
 
-test('two fingers zoom and pan the canvas without drawing, one finger draws', async ({ page }) => {
+test('two fingers zoom and pan the canvas without drawing, one finger draws', async ({
+  page,
+  browserName,
+}) => {
+  test.skip(browserName !== 'chromium', 'Touch is simulated through the Chrome DevTools Protocol');
   await page.goto('/');
   await expect(page.getByRole('application', { name: /Drawing canvas/ })).toBeVisible();
   const canvas = await readCanvas(page);

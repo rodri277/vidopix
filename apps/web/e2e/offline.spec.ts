@@ -1,7 +1,15 @@
 import { expect, test } from '@playwright/test';
 import { clickPixel, exportPng, pixelAt, readCanvas, setPrimaryColor } from './helpers';
 
-test('after the first visit the editor works without a connection', async ({ page, context }) => {
+test('after the first visit the editor works without a connection', async ({
+  page,
+  context,
+  browserName,
+}) => {
+  test.skip(
+    browserName !== 'chromium',
+    'Playwright cannot reload a WebKit page that is offline (internal error)',
+  );
   await page.goto('/');
   await expect(page.getByRole('application', { name: /Drawing canvas/ })).toBeVisible();
 
