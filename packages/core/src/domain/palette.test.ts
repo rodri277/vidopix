@@ -25,6 +25,8 @@ describe('cleanName', () => {
     expect(cleanName('abcdef', 3)).toBe('abc');
     expect(cleanName('   ', 10)).toBeUndefined();
     expect(cleanName(undefined, 10)).toBeUndefined();
+    expect(cleanName('a\nb\tc', 10)).toBe('a b c');
+    expect(cleanName('\n\r', 10)).toBeUndefined();
   });
 });
 

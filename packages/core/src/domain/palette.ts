@@ -22,7 +22,10 @@ export function opaque(color: Color): Color {
 
 /** Trims and shortens a name; returns undefined for an empty one. */
 export function cleanName(name: string | undefined, max: number): string | undefined {
-  const trimmed = name?.trim().slice(0, max);
+  const trimmed = name
+    ?.replace(/\p{Cc}+/gu, ' ')
+    .trim()
+    .slice(0, max);
   return trimmed === undefined || trimmed === '' ? undefined : trimmed;
 }
 
