@@ -82,16 +82,7 @@ export {
   medianCut,
 } from './algorithms/median-cut.js';
 export type { ProgressFn } from './algorithms/median-cut.js';
-export {
-  detectPaletteFormat,
-  exportGpl,
-  exportHex,
-  exportJson,
-  parseGpl,
-  parseHexList,
-  parseJson,
-  parsePaletteFile,
-} from './io/palette-formats.js';
-export type { PaletteFile, PaletteFormat, PaletteParseError } from './io/palette-formats.js';
+// Palette file formats live in '@vidopix/core/palette-formats' so the app can load them (and the
+// JSON validator they bring along) on demand instead of in the first download.
 export { PALETTE_PRESETS, presetToColors } from './data/palette-presets.js';
 export type { PalettePreset } from './data/palette-presets.js';

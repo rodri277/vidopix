@@ -1,12 +1,5 @@
-import {
-  PALETTE_PRESETS,
-  exportGpl,
-  exportHex,
-  exportJson,
-  parsePaletteFile,
-  toHex,
-  type PaletteFormat,
-} from '@vidopix/core';
+import { PALETTE_PRESETS, toHex } from '@vidopix/core';
+import type { PaletteFormat } from '@vidopix/core/palette-formats';
 import { Download, ImagePlus, Plus, Repeat, Upload } from 'lucide-react';
 import { useRef, useState, type ChangeEvent, type DragEvent, type KeyboardEvent } from 'react';
 import { downloadBlob, safeFileName } from '../../adapters/png-export';
@@ -104,6 +97,7 @@ export function PalettePanel() {
       setImportError('That file is too large to be a palette (limit 1 MB)');
       return;
     }
+    const { parsePaletteFile } = await import('@vidopix/core/palette-formats');
     const parsed = parsePaletteFile(await file.text(), file.name);
     if (!parsed.ok) {
       const { message, line } = parsed.error;
@@ -115,13 +109,14 @@ export function PalettePanel() {
     actions.loadPaletteColors(parsed.value.name ?? fallbackName, parsed.value.colors);
   };
 
-  const exportPalette = (): void => {
+  const exportPalette = async (): Promise<void> => {
+    const formats = await import('@vidopix/core/palette-formats');
     const text =
       format === 'gpl'
-        ? exportGpl(palette)
+        ? formats.exportGpl(palette)
         : format === 'hex'
-          ? exportHex(palette)
-          : exportJson(palette);
+          ? formats.exportHex(palette)
+          : formats.exportJson(palette);
     const type = format === 'json' ? 'application/json' : 'text/plain';
     downloadBlob(new Blob([text], { type }), safeFileName(palette.name, format));
   };
@@ -299,7 +294,9 @@ export function PalettePanel() {
           aria-label="Export palette"
           title="Export palette"
           disabled={total === 0}
-          onClick={exportPalette}
+          onClick={() => {
+            void exportPalette();
+          }}
         >
           <Download size={15} aria-hidden="true" />
         </button>

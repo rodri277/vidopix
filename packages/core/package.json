@@ -6,7 +6,8 @@
   "description": "Pure TypeScript editing engine for Vidopix. No DOM.",
   "license": "MIT",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./palette-formats": "./src/io/palette-formats.ts"
   },
   "scripts": {
     "test": "vitest run --coverage",
