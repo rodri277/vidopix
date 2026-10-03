@@ -2,6 +2,14 @@
 
 All notable changes to this project are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses [Semantic Versioning](https://semver.org/).
 
+## [1.2.3] - 2026-10-03
+
+### Added
+
+- `THIRD_PARTY_LICENSES.md` with the license text of every package and font the app ships (MIT, ISC and the SIL Open Font License for Inter and JetBrains Mono), generated from the production build by `pnpm licenses`. `pnpm build` fails if it stops matching what is shipped. It opens with a notice that the project is not affiliated with the palette authors or Lospec.
+- `PRIVACY.md`, in English and Spanish: what is stored in the browser, how share links work, and that Vercel may log requests.
+- The build publishes both as `/third-party-licenses.txt` and `/privacy.txt`.
+
 ## [1.2.2] - 2026-10-03
 
 ### Changed
