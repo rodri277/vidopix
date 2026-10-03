@@ -40,9 +40,7 @@ export function createPatch(
   previous: ArrayLike<Color>,
 ): PixelPatch | null {
   const { width, data } = buffer;
-  const indices: number[] = [];
-  const before: number[] = [];
-  const after: number[] = [];
+  let changed = 0;
   let minX = Infinity;
   let minY = Infinity;
   let maxX = -1;
@@ -50,12 +48,8 @@ export function createPatch(
 
   for (let i = 0; i < touched.length; i++) {
     const index = touched[i] ?? 0;
-    const old = previous[i] ?? 0;
-    const current = data[index] ?? 0;
-    if (old === current) continue;
-    indices.push(index);
-    before.push(old);
-    after.push(current);
+    if ((previous[i] ?? 0) === (data[index] ?? 0)) continue;
+    changed++;
     const x = index % width;
     const y = (index - x) / width;
     if (x < minX) minX = x;
@@ -64,21 +58,29 @@ export function createPatch(
     if (y > maxY) maxY = y;
   }
 
-  if (indices.length === 0) return null;
+  if (changed === 0) return null;
 
   const bounds: Rect = { x: minX, y: minY, width: maxX - minX + 1, height: maxY - minY + 1 };
   const area = bounds.width * bounds.height;
-  const sparseBytes = indices.length * 3 * BYTES_PER_PIXEL;
+  const sparseBytes = changed * 3 * BYTES_PER_PIXEL;
   const rectBytes = area * 2 * BYTES_PER_PIXEL;
 
   if (sparseBytes <= rectBytes) {
-    return {
-      kind: 'sparse',
-      bounds,
-      indices: Uint32Array.from(indices),
-      before: Uint32Array.from(before),
-      after: Uint32Array.from(after),
-    };
+    const indices = new Uint32Array(changed);
+    const before = new Uint32Array(changed);
+    const after = new Uint32Array(changed);
+    let n = 0;
+    for (let i = 0; i < touched.length; i++) {
+      const index = touched[i] ?? 0;
+      const old = previous[i] ?? 0;
+      const current = data[index] ?? 0;
+      if (old === current) continue;
+      indices[n] = index;
+      before[n] = old;
+      after[n] = current;
+      n++;
+    }
+    return { kind: 'sparse', bounds, indices, before, after };
   }
 
   const afterRect = new Uint32Array(area);
@@ -87,11 +89,13 @@ export function createPatch(
     afterRect.set(data.subarray(start, start + bounds.width), row * bounds.width);
   }
   const beforeRect = afterRect.slice();
-  for (let i = 0; i < indices.length; i++) {
-    const index = indices[i] ?? 0;
+  for (let i = 0; i < touched.length; i++) {
+    const index = touched[i] ?? 0;
+    const old = previous[i] ?? 0;
+    if (old === (data[index] ?? 0)) continue;
     const x = (index % width) - bounds.x;
     const y = Math.floor(index / width) - bounds.y;
-    beforeRect[y * bounds.width + x] = before[i] ?? 0;
+    beforeRect[y * bounds.width + x] = old;
   }
   return { kind: 'rect', bounds, before: beforeRect, after: afterRect };
 }
