@@ -1,6 +1,6 @@
 {
   "name": "@vidopix/core",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "type": "module",
   "description": "Pure TypeScript editing engine for Vidopix. No DOM.",

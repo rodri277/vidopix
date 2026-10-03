@@ -28,9 +28,9 @@ flowchart LR
 
 Arrows only go down into the core or come out of it as events. The core never knows about React or the browser.
 
-## Current state (Phase 4)
+## Current state (Phase 5)
 
-The engine in `packages/core` has the document model, algorithms, tools, history, color math, export and viewport math. `DocumentEditor` owns the layers, the selection, floating (moved or pasted) content, the clipboard and the history; `EditorSession` adds the tools, colors and pointer input on top (ADR 010, ADR 011). `apps/web` has the Canvas 2D renderer, pointer and keyboard input, the menus, the layers and color panels, and the dialogs. The sprite carries a palette (ADR 006, ADR 012): palette edits are pure state changes like layer edits, colors are generated in OKLCH, and extraction from images runs in a Web Worker. `apps/web` also holds persistence (IndexedDB autosave with a synchronous emergency copy), the project and share-link formats, the service worker for offline use, touch gestures and the translated interface (ADR 007, 013, 014, 015). Animation arrives in the next phase.
+The engine in `packages/core` has the document model, algorithms, tools, history, color math, export and viewport math. `DocumentEditor` owns the layers, the selection, floating (moved or pasted) content, the clipboard and the history; `EditorSession` adds the tools, colors and pointer input on top (ADR 010, ADR 011). `apps/web` has the Canvas 2D renderer, pointer and keyboard input, the menus, the layers and color panels, and the dialogs. The sprite carries a palette (ADR 006, ADR 012): palette edits are pure state changes like layer edits, colors are generated in OKLCH, and extraction from images runs in a Web Worker. `apps/web` also holds persistence (IndexedDB autosave with a synchronous emergency copy), the project and share-link formats, the service worker for offline use, touch gestures and the translated interface (ADR 007, 013, 014, 015). Phase 5 adds animation: frames, a timeline, playback, onion skin and GIF and spritesheet export (ADR 016, 017).
 
 ## Lifecycle of a stroke
 
@@ -56,6 +56,10 @@ The canvas is a focusable widget. Arrow keys move a pixel cursor (Alt moves 8 pi
 ## Layers and floating content
 
 Document state that is not pixels (layers, active layer, selection) is one immutable value replaced on each change, with pixel buffers shared between versions (ADR 010). Moving or pasting pixels is a single open transaction: the content floats above the layer until it is dropped, and a cancel puts everything back (ADR 011). Every edit first drops floating content, so the history never sees a half-finished move.
+
+## Frames and animation
+
+A sprite has a list of frames and every layer has one cel (pixel buffer) per frame; `Layer.buffer` is always the cel of the active frame, so tools and the renderer work as before (ADR 016). Frame edits are pure functions in `document/frame-ops.ts`, pixel commands remember the frame they were made in, and layer operations act on every frame. Playing is purely visual: `adapters/playback.ts` measures time from the start of the loop and tells the renderer which frame to draw, so playing writes nothing to the document or the history. The renderer also draws the onion skin, a tinted ghost of the neighboring frames, on its own canvas behind the active frame. Export builds each frame with `exportFrame`; the GIF is encoded in `gif.worker.ts` through `@vidopix/core/gif` and the spritesheet by `buildSpritesheet` (ADR 017).
 
 ## Palettes
 

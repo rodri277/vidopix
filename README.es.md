@@ -4,7 +4,7 @@
 
 Un editor de pixel art que funciona en el navegador: sin instalar nada, sin cuenta y con un generador de paletas integrado.
 
-> **Estado:** v1.0.0. La animación está prevista para la siguiente fase. El enlace a la demo y las capturas se añadirán cuando la app esté desplegada.
+> **Estado:** v1.1.0. El enlace a la demo y las capturas se añadirán cuando la app esté desplegada.
 
 ## Objetivos
 
@@ -25,6 +25,7 @@ Un editor de pixel art que funciona en el navegador: sin instalar nada, sin cuen
 - Se guarda solo en tu navegador (no se sube nada), proyectos recientes, archivos `.vidopix` y enlaces que llevan el sprite dentro de la URL.
 - Instalable y utilizable sin conexión.
 - Interfaz en inglés y español.
+- Animación: una línea de tiempo con fotogramas de cualquier duración, reproducción en bucle, papel cebolla y exportación a GIF animado o a una hoja de sprites con un JSON de coordenadas.
 - Exportación a PNG de 1× a 32×.
 - Se puede usar entera con teclado: las flechas mueven un cursor de píxel y mantener Enter dibuja.
 
@@ -32,13 +33,15 @@ Un editor de pixel art que funciona en el navegador: sin instalar nada, sin cuen
 
 Cifras de los benchmarks y del E2E de este repositorio, en la máquina del autor (Mac con Apple silicon, Chromium sin interfaz). No son estimaciones: ejecuta `pnpm bench` y `pnpm e2e` para reproducirlas en la tuya.
 
-| Métrica                                         | Objetivo        | Medido                                |
-| ----------------------------------------------- | --------------- | ------------------------------------- |
-| Relleno de 1024×1024, solo el algoritmo         | < 50 ms         | unos 12 ms                            |
-| Relleno de 1024×1024, con el parche de deshacer | < 50 ms         | unos 34 ms                            |
-| Tiempo por fotograma al dibujar en 256×256      | 60 fps          | 16,7 ms de media (limitado por vsync) |
-| 500 trazos deshechos y rehechos en 256×256      | dentro de 64 MB | pasa (test unitario)                  |
-| JavaScript inicial (gzip)                       | < 150 kB        | 88 kB                                 |
+| Métrica                                         | Objetivo        | Medido                                    |
+| ----------------------------------------------- | --------------- | ----------------------------------------- |
+| Relleno de 1024×1024, solo el algoritmo         | < 50 ms         | unos 12 ms                                |
+| Relleno de 1024×1024, con el parche de deshacer | < 50 ms         | unos 34 ms                                |
+| Tiempo por fotograma al dibujar en 256×256      | 60 fps          | 16,7 ms de media (limitado por vsync)     |
+| 500 trazos deshechos y rehechos en 256×256      | dentro de 64 MB | pasa (test unitario)                      |
+| Reproducir 32 fotogramas de 64×64               | 60 fps          | 16,7 ms de media (limitado por vsync)     |
+| GIF de 32 fotogramas de 64×64, en un worker     | fluido          | unos 50 ms para codificar (paleta exacta) |
+| JavaScript inicial (gzip)                       | < 150 kB        | 128 kB                                    |
 
 Lighthouse se midió con `pnpm lighthouse` sobre el build de producción con el preset de escritorio. La página está pensada para pantallas de al menos 768 px de ancho, así que una prueba móvil de tamaño teléfono no es un objetivo.
 
@@ -46,7 +49,8 @@ Lighthouse se midió con `pnpm lighthouse` sobre el build de producción con el 
 
 - La interfaz necesita al menos 768 px de ancho; los móviles no están soportados, las tablets sí.
 - Solo Chromium está cubierto por las pruebas automáticas. Safari y Firefox necesitan una revisión manual, sobre todo la instalación de la app, el portapapeles del sistema, los enlaces con `CompressionStream` y el táctil.
-- Un proyecto puede tener como máximo 1024×1024 píxeles, 64 capas y 20 MB. Un enlace admite unos 6000 caracteres: de sobra para pixel art de colores planos, insuficiente para sprites grandes o con mucho ruido.
+- Un proyecto puede tener como máximo 1024×1024 píxeles, 64 capas, 128 fotogramas y 20 MB (y 256 MB de píxeles en memoria). Un enlace admite unos 6000 caracteres: de sobra para pixel art de colores planos, insuficiente para sprites grandes o con mucho ruido.
+- Un GIF tiene una sola paleta de 256 colores y no tiene transparencia parcial, así que una imagen con más colores se reduce y los píxeles con más de la mitad transparente pasan a opacos o transparentes. Reducir miles de colores tarda medio segundo aproximadamente.
 - Los detalles de los errores al leer archivos de paleta o de proyecto son técnicos y se quedan en inglés.
 
 ## Stack

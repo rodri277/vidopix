@@ -36,6 +36,7 @@ Before closing any task: `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm e
 
 - `EditorSession` (core) is the only door to the document. Tools are strategies in `packages/core/src/tools`. Layers, selection, clipboard and history live in `session.document` (`DocumentEditor`); layer edits are pure functions in `document/layer-ops.ts`.
 - The palette lives on the sprite; edit it through `session.document` (`addPaletteColor`, `loadPalette`, `replaceColor`, ...). Palette file formats are imported from `@vidopix/core/palette-formats` (a separate entry so the app can load them on demand); do not add them back to the core index.
+- Animation: every layer has one cel per frame (`layer.cels`), and `layer.buffer` is the cel of `state.activeFrame`; use the helpers in `document/frame-ops.ts` and never build a `Layer` without `cels`. Pixel commands go through `DocumentEditor.pixelCommand` so they remember their frame. GIF encoding is in `@vidopix/core/gif` (a separate entry, used by the worker); do not add it to the core index.
 - Any code that edits the document must first drop floating content (`commitFloating`); `DocumentEditor` does it for its own operations.
 - Pure viewport math is in the core (`viewport/`); the renderer (`apps/web/src/adapters/canvas-renderer.ts`) only applies it.
 - UI state is a Zustand store (`apps/web/src/state/editor-store.ts`) that mirrors session events (ADR 005).
