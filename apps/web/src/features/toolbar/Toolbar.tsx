@@ -13,7 +13,6 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { useRef, type KeyboardEvent } from 'react';
-import { cx } from '../../design-system/cx';
 import type { MessageKey } from '../../i18n';
 import { useT } from '../../i18n/useT';
 import { toCssColor } from '../../state/css-color';
@@ -101,22 +100,22 @@ export function Toolbar() {
       <div className={styles.colors}>
         <button
           type="button"
-          className={cx(styles.swatch, styles.secondary)}
-          style={{ background: toCssColor(secondary) }}
-          aria-label={t('toolbar.secondary')}
-          aria-pressed={editingSlot === 'secondary'}
-          onClick={() => {
-            store.getState().setEditingSlot('secondary');
-          }}
-        />
-        <button
-          type="button"
-          className={cx(styles.swatch, styles.primary)}
+          className={styles.swatch}
           style={{ background: toCssColor(primary) }}
           aria-label={t('toolbar.primary')}
           aria-pressed={editingSlot === 'primary'}
           onClick={() => {
             store.getState().setEditingSlot('primary');
+          }}
+        />
+        <button
+          type="button"
+          className={styles.swatch}
+          style={{ background: toCssColor(secondary) }}
+          aria-label={t('toolbar.secondary')}
+          aria-pressed={editingSlot === 'secondary'}
+          onClick={() => {
+            store.getState().setEditingSlot('secondary');
           }}
         />
       </div>

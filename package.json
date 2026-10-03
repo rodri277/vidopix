@@ -21,7 +21,8 @@
     "deps:check": "depcruise packages/core/src apps/web/src --config .dependency-cruiser.cjs",
     "size": "pnpm --filter @vidopix/web size",
     "prepare": "husky",
-    "bench": "pnpm --filter @vidopix/core bench"
+    "bench": "pnpm --filter @vidopix/core bench",
+    "lighthouse": "node tools/lighthouse.mjs"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.2.3",

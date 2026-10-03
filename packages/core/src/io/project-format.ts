@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from './zod.js';
 import { toHex, parseHex } from '../domain/color.js';
 import {
   MAX_PALETTE_COLORS,
