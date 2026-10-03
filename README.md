@@ -6,7 +6,7 @@ A pixel art editor that runs in your browser: no install, no account, and a buil
 
 ![A slime hopping under a crescent moon, drawn in Vidopix and exported with its own GIF export](docs/media/showcase.gif)
 
-> **Status:** v1.1.2, all phases of [SPEC.md](SPEC.md) done. The animation above was drawn in the editor, with four layers and eight frames, and exported with its own GIF export (`pnpm showcase` redraws it). The live demo link is added once the app is deployed (see [Deploying](#deploying)).
+> **Status:** v1.1.2, all phases of [SPEC.md](SPEC.md) done. The animation above was drawn in the editor, with four layers and eight frames, and exported with its own GIF export (`pnpm showcase` redraws it). **[Try it live](https://vidopix.vercel.app)** (see [Deploying](#deploying)).
 
 ![The editor with an animation, its timeline and onion skin](docs/media/animation.png)
 
@@ -139,7 +139,7 @@ pnpm dev
 
 ## Deploying
 
-`vercel.json` is ready (build command, output folder and a strict Content Security Policy). To publish: import the repository in Vercel and keep the defaults; every pull request then gets a preview. Add the resulting address to the top of this file.
+`vercel.json` is ready (build command, output folder and a strict Content Security Policy). To publish: import the repository in Vercel and keep the defaults; every pull request then gets a preview. The live demo is deployed this way at <https://vidopix.vercel.app>.
 
 ## Known limits
 
