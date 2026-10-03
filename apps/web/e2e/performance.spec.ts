@@ -109,3 +109,44 @@ test('drawing over 8 layers on 256x256 keeps the frame rate near 60 fps', async 
   );
   expect(probe.mean).toBeLessThan(20);
 });
+
+test('playing 32 frames of 64x64 keeps the frame rate near 60 fps', async ({ page }, testInfo) => {
+  await page.goto('/');
+  await expect(page.getByRole('application', { name: /Drawing canvas/ })).toBeVisible();
+  await page.keyboard.press('ControlOrMeta+n');
+  const dialog = page.getByRole('dialog', { name: 'New sprite' });
+  await dialog.getByRole('button', { name: '64×64' }).click();
+  await dialog.getByRole('button', { name: 'Create' }).click();
+  await expect(page.getByRole('contentinfo')).toContainText('64×64 px');
+
+  // Give every frame something different to draw, on two layers.
+  const canvas = await readCanvas(page, 64, 64);
+  await page.getByRole('button', { name: 'New layer' }).click();
+  for (let frame = 0; frame < 32; frame++) {
+    if (frame > 0) await page.getByRole('button', { name: 'New frame' }).click();
+    const point = canvas.center(frame * 2, frame);
+    await page.mouse.move(point.x, point.y);
+    await page.mouse.down();
+    await page.mouse.move(point.x + 20 * canvas.zoom, point.y + 10 * canvas.zoom);
+    await page.mouse.up();
+  }
+  await expect(page.getByRole('list', { name: 'Frames' }).getByRole('listitem')).toHaveCount(32);
+  await page.getByRole('button', { name: 'Show the previous frame' }).click();
+  await page.getByLabel('FPS').fill('50');
+  await page.getByLabel('FPS').press('Enter');
+
+  const probe = await measureFrames(page, async () => {
+    await page.getByRole('button', { name: 'Play' }).click();
+    await page.waitForTimeout(2500);
+    await page.getByRole('button', { name: 'Pause' }).click();
+  });
+
+  testInfo.annotations.push({
+    type: 'frame time',
+    description: `mean ${probe.mean.toFixed(1)} ms, p95 ${probe.p95.toFixed(1)} ms over ${String(probe.frames)} frames`,
+  });
+  console.warn(
+    `Frame time while playing 32 frames at 64x64: mean ${probe.mean.toFixed(1)} ms, p95 ${probe.p95.toFixed(1)} ms (${String(probe.frames)} frames)`,
+  );
+  expect(probe.mean).toBeLessThan(20);
+});

@@ -113,3 +113,88 @@ export function paintedPixels(image: DecodedImage): Set<string> {
   }
   return painted;
 }
+
+/** Opens the export dialog and picks a format; returns the dialog. */
+export async function openExport(
+  page: Page,
+  format: 'PNG image' | 'Animated GIF' | 'Spritesheet (PNG + JSON)',
+) {
+  await page.keyboard.press('ControlOrMeta+e');
+  const dialog = page.getByRole('dialog', { name: 'Export' });
+  await expect(dialog).toBeVisible();
+  await dialog.getByLabel('Format').selectOption({ label: format });
+  return dialog;
+}
+
+export interface DecodedGif {
+  /** Loops forever when 0 or Infinity. */
+  repetitionCount: number;
+  width: number;
+  height: number;
+  frames: { durationMs: number; data: number[] }[];
+}
+
+/** Decodes a GIF with the browser's own decoder, as any viewer would. */
+export async function decodeGif(page: Page, download: Download): Promise<DecodedGif> {
+  const base64 = (await readFile(await download.path())).toString('base64');
+  return page.evaluate(async (encoded) => {
+    const bytes = Uint8Array.from(atob(encoded), (char) => char.charCodeAt(0));
+    const decoder = new ImageDecoder({ data: bytes, type: 'image/gif' });
+    await decoder.tracks.ready;
+    await decoder.completed;
+    const track = decoder.tracks.selectedTrack;
+    if (!track) throw new Error('GIF has no track');
+    const frames: { durationMs: number; data: number[] }[] = [];
+    let width = 0;
+    let height = 0;
+    for (let index = 0; index < track.frameCount; index++) {
+      const { image } = await decoder.decode({ frameIndex: index });
+      width = image.displayWidth;
+      height = image.displayHeight;
+      const canvas = new OffscreenCanvas(width, height);
+      const context = canvas.getContext('2d');
+      if (!context) throw new Error('no 2d context');
+      context.drawImage(image, 0, 0);
+      frames.push({
+        durationMs: (image.duration ?? 0) / 1000,
+        data: Array.from(context.getImageData(0, 0, width, height).data),
+      });
+      image.close();
+    }
+    return { repetitionCount: track.repetitionCount, width, height, frames };
+  }, base64);
+}
+
+/** The colour of the document canvas under the middle of a sprite pixel, as the user sees it. */
+export async function screenPixel(
+  page: Page,
+  canvas: Canvas,
+  x: number,
+  y: number,
+): Promise<[number, number, number, number]> {
+  const point = canvas.center(x, y);
+  return page.evaluate(
+    ({ px, py }) => {
+      const surface = document.querySelector('[role="application"]');
+      const element = surface?.querySelector('canvas');
+      if (!surface || !element) throw new Error('no canvas');
+      const box = surface.getBoundingClientRect();
+      const context = element.getContext('2d');
+      if (!context) throw new Error('no 2d context');
+      const ratio = element.width / box.width;
+      const data = context.getImageData(
+        Math.round((px - box.left) * ratio),
+        Math.round((py - box.top) * ratio),
+        1,
+        1,
+      ).data;
+      return [data[0] ?? 0, data[1] ?? 0, data[2] ?? 0, data[3] ?? 0] as [
+        number,
+        number,
+        number,
+        number,
+      ];
+    },
+    { px: point.x, py: point.y },
+  );
+}
