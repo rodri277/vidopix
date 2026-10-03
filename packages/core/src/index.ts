@@ -35,3 +35,15 @@ export {
   exportSprite,
 } from './io/export.js';
 export type { ExportError, ExportImage, ExportOptions } from './io/export.js';
+export {
+  MAX_ZOOM,
+  MIN_ZOOM,
+  ZOOM_LEVELS,
+  centerViewport,
+  clampZoom,
+  fitViewport,
+  nextZoom,
+  screenToDocument,
+  zoomAt,
+} from './viewport/viewport.js';
+export type { Viewport } from './viewport/viewport.js';
