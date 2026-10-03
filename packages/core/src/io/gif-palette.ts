@@ -1,3 +1,6 @@
+// gifenc ships no types; every project that reads this file needs to see ours.
+// eslint-disable-next-line @typescript-eslint/triple-slash-reference
+/// <reference path="../types/gifenc.d.ts" />
 import { applyPalette, quantize, type RgbColor } from 'gifenc';
 
 /** Pixels with less alpha than this are transparent in a GIF, which has no partial transparency. */
@@ -5,7 +8,7 @@ export const GIF_OPAQUE_ALPHA = 128;
 /** A GIF palette holds 256 entries; one is kept for transparency when it is needed. */
 const PALETTE_SIZE = 256;
 /** Most pixels looked at when picking colors for an image that has too many. */
-const MAX_SAMPLE_PIXELS = 1 << 20;
+const MAX_SAMPLE_PIXELS = 1 << 15;
 
 export interface IndexedFrames {
   readonly palette: RgbColor[];

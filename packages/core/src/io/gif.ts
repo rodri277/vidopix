@@ -1,3 +1,6 @@
+// gifenc ships no types; every project that reads this file needs to see ours.
+// eslint-disable-next-line @typescript-eslint/triple-slash-reference
+/// <reference path="../types/gifenc.d.ts" />
 import { GIFEncoder } from 'gifenc';
 import type { Sprite } from '../domain/sprite.js';
 import { ok, type Result } from '../result.js';

@@ -55,6 +55,12 @@
       "path": "dist/assets/palette.worker-*.js",
       "limit": "50 kB",
       "gzip": true
+    },
+    {
+      "name": "GIF worker, loaded on demand (gzip)",
+      "path": "dist/assets/gif.worker-*.js",
+      "limit": "30 kB",
+      "gzip": true
     }
   ]
 }
