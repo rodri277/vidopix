@@ -14,31 +14,34 @@ import {
 } from 'lucide-react';
 import { useRef, type KeyboardEvent } from 'react';
 import { cx } from '../../design-system/cx';
+import type { MessageKey } from '../../i18n';
+import { useT } from '../../i18n/useT';
 import { toCssColor } from '../../state/css-color';
 import { useEditor, useEditorState } from '../../state/editor-context';
 import styles from './Toolbar.module.css';
 
 interface ToolEntry {
   readonly id: ToolId;
-  readonly label: string;
+  readonly label: MessageKey;
   readonly key: string;
   readonly icon: LucideIcon;
 }
 
 const TOOLS: readonly ToolEntry[] = [
-  { id: 'pencil', label: 'Pencil', key: 'B', icon: Pencil },
-  { id: 'eraser', label: 'Eraser', key: 'E', icon: Eraser },
-  { id: 'fill', label: 'Fill', key: 'G', icon: PaintBucket },
-  { id: 'eyedropper', label: 'Eyedropper', key: 'I', icon: Pipette },
-  { id: 'line', label: 'Line', key: 'L', icon: Minus },
-  { id: 'rectangle', label: 'Rectangle', key: 'U', icon: Square },
-  { id: 'ellipse', label: 'Ellipse', key: 'O', icon: Circle },
-  { id: 'select', label: 'Select', key: 'M', icon: SquareDashed },
-  { id: 'move', label: 'Move', key: 'V', icon: Move },
+  { id: 'pencil', label: 'tool.pencil', key: 'B', icon: Pencil },
+  { id: 'eraser', label: 'tool.eraser', key: 'E', icon: Eraser },
+  { id: 'fill', label: 'tool.fill', key: 'G', icon: PaintBucket },
+  { id: 'eyedropper', label: 'tool.eyedropper', key: 'I', icon: Pipette },
+  { id: 'line', label: 'tool.line', key: 'L', icon: Minus },
+  { id: 'rectangle', label: 'tool.rectangle', key: 'U', icon: Square },
+  { id: 'ellipse', label: 'tool.ellipse', key: 'O', icon: Circle },
+  { id: 'select', label: 'tool.select', key: 'M', icon: SquareDashed },
+  { id: 'move', label: 'tool.move', key: 'V', icon: Move },
 ];
 
 export function Toolbar() {
   const { store } = useEditor();
+  const t = useT();
   const activeTool = useEditorState((state) => state.tool);
   const primary = useEditorState((state) => state.primary);
   const secondary = useEditorState((state) => state.secondary);
@@ -68,12 +71,13 @@ export function Toolbar() {
       ref={containerRef}
       className={styles.toolbar}
       role="toolbar"
-      aria-label="Tools"
+      aria-label={t('toolbar.tools')}
       aria-orientation="vertical"
       onKeyDown={onKeyDown}
     >
-      {TOOLS.map(({ id, label, key, icon: Icon }) => {
+      {TOOLS.map(({ id, label: labelKey, key, icon: Icon }) => {
         const pressed = id === activeTool;
+        const label = t(labelKey);
         return (
           <button
             key={id}
@@ -99,7 +103,7 @@ export function Toolbar() {
           type="button"
           className={cx(styles.swatch, styles.secondary)}
           style={{ background: toCssColor(secondary) }}
-          aria-label="Secondary color"
+          aria-label={t('toolbar.secondary')}
           aria-pressed={editingSlot === 'secondary'}
           onClick={() => {
             store.getState().setEditingSlot('secondary');
@@ -109,7 +113,7 @@ export function Toolbar() {
           type="button"
           className={cx(styles.swatch, styles.primary)}
           style={{ background: toCssColor(primary) }}
-          aria-label="Primary color"
+          aria-label={t('toolbar.primary')}
           aria-pressed={editingSlot === 'primary'}
           onClick={() => {
             store.getState().setEditingSlot('primary');
@@ -119,8 +123,8 @@ export function Toolbar() {
       <button
         type="button"
         className={styles.swap}
-        data-tooltip="Swap colors (X)"
-        aria-label="Swap colors"
+        data-tooltip={t('toolbar.swapTip')}
+        aria-label={t('toolbar.swap')}
         aria-keyshortcuts="X"
         onClick={() => {
           store.getState().swapColors();

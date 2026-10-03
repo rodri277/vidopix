@@ -1,6 +1,7 @@
 import type { EditorSession } from '@vidopix/core';
 import { AppLayout } from '../design-system/AppLayout';
 import { Tabs } from '../design-system/Tabs';
+import { useT } from '../i18n/useT';
 import { Announcer } from '../features/a11y/Announcer';
 import { CanvasView } from '../features/canvas/CanvasView';
 import { ColorPanel } from '../features/color/ColorPanel';
@@ -32,6 +33,7 @@ interface Props {
 function Editor({ session, store, onUpdate }: Omit<Props, 'services'>) {
   const panelsHidden = useEditorState((state) => state.panelsHidden);
   const { services } = useEditor();
+  const t = useT();
   useGlobalShortcuts(session, store, services);
   return (
     <>
@@ -45,11 +47,11 @@ function Editor({ session, store, onUpdate }: Omit<Props, 'services'>) {
           <>
             <LayersPanel />
             <Tabs
-              label="Color tools"
+              label={t('tabs.label')}
               tabs={[
-                { id: 'color', label: 'Color', content: <ColorPanel /> },
-                { id: 'palette', label: 'Palette', content: <PalettePanel /> },
-                { id: 'generate', label: 'Generate', content: <GeneratePanel /> },
+                { id: 'color', label: t('tabs.color'), content: <ColorPanel /> },
+                { id: 'palette', label: t('tabs.palette'), content: <PalettePanel /> },
+                { id: 'generate', label: t('tabs.generate'), content: <GeneratePanel /> },
               ]}
             />
           </>

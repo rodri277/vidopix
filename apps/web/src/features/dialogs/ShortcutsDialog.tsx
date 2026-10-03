@@ -31,7 +31,7 @@ export function ShortcutsDialog() {
               {group.entries.map((entry) => (
                 <div key={entry.label} style={{ display: 'contents' }}>
                   <dt>{t(entry.label)}</dt>
-                  <dd>{shortcutKeys(entry.keys)}</dd>
+                  <dd>{entry.keysLabel ? t(entry.keysLabel) : shortcutKeys(entry.keys)}</dd>
                 </div>
               ))}
             </dl>

@@ -9,6 +9,8 @@ export interface ShortcutEntry {
   readonly label: MessageKey;
   /** What to show, with `Ctrl` standing for Cmd on a Mac. */
   readonly keys: string;
+  /** When the keys are words rather than symbols, the text to show instead of `keys`. */
+  readonly keysLabel?: MessageKey;
   /** The key press this entry describes, for the consistency test. */
   readonly input?: Pick<KeyInput, 'key'> & Partial<KeyInput>;
 }
@@ -60,8 +62,8 @@ export const SHORTCUT_GROUPS: readonly ShortcutGroup[] = [
       { label: 'view.zoomOut', keys: '-', input: { key: '-' } },
       { label: 'view.fit', keys: '0', input: { key: '0' } },
       { label: 'view.actualSize', keys: '1', input: { key: '1' } },
-      { label: 'shortcuts.pan', keys: 'Space + drag' },
-      { label: 'shortcuts.zoomWheel', keys: 'Mouse wheel' },
+      { label: 'shortcuts.pan', keys: 'Space + drag', keysLabel: 'shortcuts.spaceDrag' },
+      { label: 'shortcuts.zoomWheel', keys: 'Mouse wheel', keysLabel: 'shortcuts.mouseWheel' },
       { label: 'view.showGrid', keys: "Ctrl+'", input: { key: "'", ...mod } },
       { label: 'view.hidePanels', keys: 'Ctrl+\\', input: { key: '\\', ...mod } },
     ],

@@ -11,16 +11,18 @@ import {
 import { useMemo, useState } from 'react';
 import { Slider } from '../../design-system/Field';
 import { Swatch } from '../../design-system/Swatch';
+import type { MessageKey } from '../../i18n';
+import { useT, type TFunction } from '../../i18n/useT';
 import { toCssColor } from '../../state/css-color';
 import { useEditor, useEditorState } from '../../state/editor-context';
 import styles from './GeneratePanel.module.css';
 
-const HARMONY_LABELS: Readonly<Record<HarmonyKind, string>> = {
-  analogous: 'Analogous',
-  complementary: 'Complementary',
-  triadic: 'Triadic',
-  tetradic: 'Tetradic',
-  monochromatic: 'Monochromatic',
+const HARMONY_KEYS: Readonly<Record<HarmonyKind, MessageKey>> = {
+  analogous: 'generate.analogous',
+  complementary: 'generate.complementary',
+  triadic: 'generate.triadic',
+  tetradic: 'generate.tetradic',
+  monochromatic: 'generate.monochromatic',
 };
 
 interface StripProps {
@@ -31,13 +33,18 @@ interface StripProps {
 /** A row of generated colors. Clicking one makes it the primary color. */
 function Strip({ label, colors }: StripProps) {
   const { store } = useEditor();
+  const t: TFunction = useT();
   return (
     <div className={styles.strip} role="group" aria-label={label}>
       {colors.map((color, index) => (
         <Swatch
           key={`${String(index)}-${String(color)}`}
           background={toCssColor(color)}
-          aria-label={`${toHex(color).toUpperCase()}, ${String(index + 1)} of ${String(colors.length)}`}
+          aria-label={t('generate.swatchLabel', {
+            hex: toHex(color).toUpperCase(),
+            index: index + 1,
+            total: colors.length,
+          })}
           title={toHex(color).toUpperCase()}
           onClick={() => {
             store.getState().setColor('primary', color);
@@ -53,14 +60,15 @@ function Strip({ label, colors }: StripProps) {
 }
 
 const LEVEL_LABELS = [
-  ['aaNormal', 'AA, normal text (4.5:1)'],
-  ['aaLarge', 'AA, large text (3:1)'],
-  ['aaaNormal', 'AAA, normal text (7:1)'],
-  ['aaaLarge', 'AAA, large text (4.5:1)'],
+  ['aaNormal', 'generate.levelAaNormal'],
+  ['aaLarge', 'generate.levelAaLarge'],
+  ['aaaNormal', 'generate.levelAaaNormal'],
+  ['aaaLarge', 'generate.levelAaaLarge'],
 ] as const;
 
 export function GeneratePanel() {
   const { store } = useEditor();
+  const t = useT();
   const primary = useEditorState((state) => state.primary);
   const secondary = useEditorState((state) => state.secondary);
   const [kind, setKind] = useState<HarmonyKind>('complementary');
@@ -79,12 +87,12 @@ export function GeneratePanel() {
     <div className={styles.panel}>
       <section className={styles.section} aria-labelledby="harmony-heading">
         <h2 id="harmony-heading" className={styles.heading}>
-          Harmonies of the primary color
+          {t('generate.harmonyTitle')}
         </h2>
         <div className={styles.row}>
           <select
             className={styles.select}
-            aria-label="Harmony"
+            aria-label={t('generate.harmony')}
             value={kind}
             onChange={(event) => {
               setKind(event.target.value as HarmonyKind);
@@ -92,7 +100,7 @@ export function GeneratePanel() {
           >
             {HARMONY_KINDS.map((value) => (
               <option key={value} value={value}>
-                {HARMONY_LABELS[value]}
+                {t(HARMONY_KEYS[value])}
               </option>
             ))}
           </select>
@@ -103,26 +111,26 @@ export function GeneratePanel() {
               add(harmonyColors);
             }}
           >
-            Add to palette
+            {t('generate.addToPalette')}
           </button>
         </div>
-        <Strip label="Harmony colors" colors={harmonyColors} />
+        <Strip label={t('generate.harmonyColors')} colors={harmonyColors} />
       </section>
 
       <section className={styles.section} aria-labelledby="ramp-heading">
         <h2 id="ramp-heading" className={styles.heading}>
-          Shade ramp with hue shifting
+          {t('generate.rampTitle')}
         </h2>
-        <Slider label="Steps" value={steps} min={3} max={15} onChange={setSteps} />
+        <Slider label={t('generate.steps')} value={steps} min={3} max={15} onChange={setSteps} />
         <Slider
-          label="Hue shift"
+          label={t('generate.hueShift')}
           value={hueShift}
           min={0}
           max={60}
           display={`${String(hueShift)}°`}
           onChange={setHueShift}
         />
-        <Strip label="Shade ramp" colors={ramp} />
+        <Strip label={t('generate.rampColors')} colors={ramp} />
         <div className={styles.row}>
           <button
             type="button"
@@ -131,17 +139,15 @@ export function GeneratePanel() {
               add(ramp);
             }}
           >
-            Add ramp to palette
+            {t('generate.addRamp')}
           </button>
         </div>
-        <p className={styles.hint}>
-          Shadows drift toward blue-purple and highlights toward yellow. Click a color to use it.
-        </p>
+        <p className={styles.hint}>{t('generate.rampHint')}</p>
       </section>
 
       <section className={styles.section} aria-labelledby="contrast-heading">
         <h2 id="contrast-heading" className={styles.heading}>
-          Contrast: primary on secondary
+          {t('generate.contrastTitle')}
         </h2>
         <div
           className={styles.sample}
@@ -150,15 +156,18 @@ export function GeneratePanel() {
         >
           Aa 123
         </div>
-        <p className={styles.ratio} aria-label={`Contrast ratio ${ratio.toFixed(2)} to 1`}>
+        <p
+          className={styles.ratio}
+          aria-label={t('generate.contrastLabel', { ratio: ratio.toFixed(2) })}
+        >
           {ratio.toFixed(2)}:1
         </p>
         <dl className={styles.levels}>
-          {LEVEL_LABELS.map(([key, label]) => (
+          {LEVEL_LABELS.map(([key, labelKey]) => (
             <div key={key} style={{ display: 'contents' }}>
-              <dt>{label}</dt>
+              <dt>{t(labelKey)}</dt>
               <dd className={levels[key] ? styles.pass : styles.fail}>
-                {levels[key] ? 'Pass' : 'Fail'}
+                {levels[key] ? t('generate.pass') : t('generate.fail')}
               </dd>
             </div>
           ))}

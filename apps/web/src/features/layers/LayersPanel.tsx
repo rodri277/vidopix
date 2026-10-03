@@ -15,6 +15,7 @@ import {
 import { useRef, useState, type DragEvent, type KeyboardEvent } from 'react';
 import { cx } from '../../design-system/cx';
 import { Slider } from '../../design-system/Field';
+import { useT } from '../../i18n/useT';
 import { useEditor, useEditorState } from '../../state/editor-context';
 import styles from './LayersPanel.module.css';
 
@@ -42,6 +43,7 @@ function Action({ label, icon: Icon, disabled = false, onClick }: ActionProps) {
 
 export function LayersPanel() {
   const { store } = useEditor();
+  const t = useT();
   const layers = useEditorState((state) => state.layers);
   const activeId = useEditorState((state) => state.activeLayerId);
   const [renamingId, setRenamingId] = useState<string | null>(null);
@@ -93,25 +95,25 @@ export function LayersPanel() {
   return (
     <section className={styles.panel} aria-labelledby="layers-heading">
       <h2 id="layers-heading" className={styles.heading}>
-        Layers
+        {t('layers.title')}
       </h2>
-      <div className={styles.actions} role="group" aria-label="Layer actions">
+      <div className={styles.actions} role="group" aria-label={t('layers.actions')}>
         <Action
-          label="New layer"
+          label={t('layer.new')}
           icon={Plus}
           onClick={() => {
             actions.addLayer();
           }}
         />
         <Action
-          label="Duplicate layer"
+          label={t('layer.duplicate')}
           icon={Copy}
           onClick={() => {
             actions.duplicateLayer();
           }}
         />
         <Action
-          label="Delete layer"
+          label={t('layer.delete')}
           icon={Trash2}
           disabled={layers.length <= 1}
           onClick={() => {
@@ -119,7 +121,7 @@ export function LayersPanel() {
           }}
         />
         <Action
-          label="Merge down"
+          label={t('layer.mergeDown')}
           icon={ArrowDownToLine}
           disabled={activeIndex <= 0}
           onClick={() => {
@@ -127,7 +129,7 @@ export function LayersPanel() {
           }}
         />
         <Action
-          label="Flatten image"
+          label={t('layer.flatten')}
           icon={Layers}
           disabled={layers.length <= 1}
           onClick={() => {
@@ -135,7 +137,7 @@ export function LayersPanel() {
           }}
         />
         <Action
-          label="Move layer up"
+          label={t('layer.moveUp')}
           icon={ArrowUp}
           disabled={activeIndex < 0 || activeIndex >= layers.length - 1}
           onClick={() => {
@@ -143,7 +145,7 @@ export function LayersPanel() {
           }}
         />
         <Action
-          label="Move layer down"
+          label={t('layer.moveDown')}
           icon={ArrowDown}
           disabled={activeIndex <= 0}
           onClick={() => {
@@ -152,13 +154,13 @@ export function LayersPanel() {
         />
       </div>
 
-      <ul ref={listRef} className={styles.list} aria-label="Layer list">
+      <ul ref={listRef} className={styles.list} aria-label={t('layers.list')}>
         {rows.map((layer, displayIndex) => {
           const isActive = layer.id === activeId;
           const description = [
             layer.name,
-            layer.locked ? 'locked' : '',
-            layer.visible ? '' : 'hidden',
+            layer.locked ? t('layers.locked') : '',
+            layer.visible ? '' : t('layers.hidden'),
           ]
             .filter(Boolean)
             .join(', ');
@@ -197,7 +199,7 @@ export function LayersPanel() {
                 type="button"
                 className={styles.toggle}
                 aria-pressed={layer.visible}
-                aria-label={`${layer.visible ? 'Hide' : 'Show'} ${layer.name}`}
+                aria-label={t(layer.visible ? 'layers.hide' : 'layers.show', { name: layer.name })}
                 onClick={() => {
                   actions.setLayerVisible(layer.id, !layer.visible);
                 }}
@@ -212,7 +214,7 @@ export function LayersPanel() {
                 type="button"
                 className={styles.toggle}
                 aria-pressed={layer.locked}
-                aria-label={`${layer.locked ? 'Unlock' : 'Lock'} ${layer.name}`}
+                aria-label={t(layer.locked ? 'layers.unlock' : 'layers.lock', { name: layer.name })}
                 onClick={() => {
                   actions.setLayerLocked(layer.id, !layer.locked);
                 }}
@@ -226,7 +228,7 @@ export function LayersPanel() {
               {renamingId === layer.id ? (
                 <input
                   className={styles.rename}
-                  aria-label={`Rename ${layer.name}`}
+                  aria-label={t('layers.rename', { name: layer.name })}
                   defaultValue={layer.name}
                   maxLength={60}
                   // eslint-disable-next-line jsx-a11y/no-autofocus -- the field replaces the name the user just chose to edit
@@ -280,7 +282,7 @@ export function LayersPanel() {
 
       {active ? (
         <Slider
-          label="Opacity"
+          label={t('layers.opacity')}
           value={Math.round(active.opacity * 100)}
           min={0}
           max={100}

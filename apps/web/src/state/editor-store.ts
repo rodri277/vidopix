@@ -6,7 +6,6 @@ import {
   presetToColors,
   screenToDocument,
   zoomAt,
-  type BlockReason,
   type Color,
   type ColorSlot,
   type EditorSession,
@@ -27,6 +26,7 @@ import {
   type MessageKey,
   type MessageParams,
 } from '../i18n';
+import { HISTORY_LABEL_KEYS } from '../i18n/history-labels';
 import type { SaveStatus } from './persistence';
 
 export type DialogId =
@@ -54,15 +54,6 @@ export interface SystemClipboard {
 }
 
 const NOTICE_MILLISECONDS = 3500;
-
-const BLOCKED_MESSAGES: Readonly<Record<BlockReason, string>> = {
-  'layer-locked': 'The active layer is locked',
-  'layer-hidden': 'The active layer is hidden',
-  'nothing-selected': 'Nothing is selected',
-  'single-layer': 'A sprite needs at least one layer',
-  'color-in-palette': 'That color is already in the palette',
-  'palette-full': 'The palette is full (256 colors)',
-};
 
 export interface EditorState {
   // Mirrored from the session
@@ -194,6 +185,12 @@ export function createEditorStore(
   onLanguageChange: (language: Language) => void = () => undefined,
 ): EditorStore {
   let noticeTimer: ReturnType<typeof setTimeout> | undefined;
+  const say = (key: MessageKey, params?: MessageParams): string =>
+    translate(store.getState().language, key, params);
+  const labelText = (label: string): string => {
+    const key = HISTORY_LABEL_KEYS[label];
+    return key ? say(key) : label;
+  };
   const showNotice = (message: string): void => {
     clearTimeout(noticeTimer);
     store.setState({ notice: message, announcement: message });
@@ -212,7 +209,7 @@ export function createEditorStore(
 
   const copyToSystem = (image: PixelBuffer): void => {
     clipboard.writeImage(image).catch(() => {
-      showNotice('Copied inside Vidopix only; the browser blocked the system clipboard');
+      showNotice(say('notice.copyBlocked'));
     });
   };
 
@@ -381,8 +378,10 @@ export function createEditorStore(
       const changed = session.document.replaceColor(from, to);
       showNotice(
         changed === 0
-          ? 'That color is not in the drawing'
-          : `Replaced ${String(changed)} pixel${changed === 1 ? '' : 's'}`,
+          ? say('notice.colorMissing')
+          : changed === 1
+            ? say('notice.replacedOne')
+            : say('notice.replacedMany', { count: changed }),
       );
       return changed;
     },
@@ -421,7 +420,7 @@ export function createEditorStore(
       else get().pasteInternal();
     },
     pasteInternal: () => {
-      if (!session.paste(pasteCenter())) showNotice('Nothing to paste');
+      if (!session.paste(pasteCenter())) showNotice(say('notice.nothingToPaste'));
     },
     pasteImage: (image) => {
       session.pasteBuffer(image, pasteCenter());
@@ -486,9 +485,9 @@ export function createEditorStore(
   session.on('historyChanged', ({ canUndo, canRedo, undoLabel, redoLabel, cause, label }) => {
     const announcement =
       cause === 'undo' && label
-        ? `Undid: ${label}`
+        ? say('history.undid', { label: labelText(label) })
         : cause === 'redo' && label
-          ? `Redid: ${label}`
+          ? say('history.redid', { label: labelText(label) })
           : store.getState().announcement;
     store.setState({ canUndo, canRedo, undoLabel, redoLabel, announcement });
   });
@@ -505,7 +504,7 @@ export function createEditorStore(
     store.setState({ hasFloating: floating !== null });
   });
   session.on('actionBlocked', ({ reason }) => {
-    showNotice(BLOCKED_MESSAGES[reason]);
+    showNotice(say(`blocked.${reason}`));
   });
   session.on('spriteReplaced', ({ sprite }) => {
     const state = store.getState();

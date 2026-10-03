@@ -4,6 +4,7 @@ import { Download, ImagePlus, Plus, Repeat, Upload } from 'lucide-react';
 import { useRef, useState, type ChangeEvent, type DragEvent, type KeyboardEvent } from 'react';
 import { downloadBlob, safeFileName } from '../../adapters/png-export';
 import { Swatch } from '../../design-system/Swatch';
+import { useT } from '../../i18n/useT';
 import { toCssColor } from '../../state/css-color';
 import { useEditor, useEditorState } from '../../state/editor-context';
 import styles from './PalettePanel.module.css';
@@ -11,14 +12,11 @@ import styles from './PalettePanel.module.css';
 const COLUMNS = 8;
 const MAX_FILE_BYTES = 1024 * 1024;
 
-const FORMATS: readonly { id: PaletteFormat; label: string }[] = [
-  { id: 'gpl', label: 'GIMP (.gpl)' },
-  { id: 'hex', label: 'Hex list (.hex)' },
-  { id: 'json', label: 'JSON (.json)' },
-];
+const FORMATS: readonly PaletteFormat[] = ['gpl', 'hex', 'json'];
 
 export function PalettePanel() {
   const { store } = useEditor();
+  const t = useT();
   const palette = useEditorState((state) => state.palette);
   const primary = useEditorState((state) => state.primary);
   const secondary = useEditorState((state) => state.secondary);
@@ -94,14 +92,14 @@ export function PalettePanel() {
     event.target.value = '';
     if (!file) return;
     if (file.size > MAX_FILE_BYTES) {
-      setImportError('That file is too large to be a palette (limit 1 MB)');
+      setImportError(t('palette.tooLarge'));
       return;
     }
     const { parsePaletteFile } = await import('@vidopix/core/palette-formats');
     const parsed = parsePaletteFile(await file.text(), file.name);
     if (!parsed.ok) {
       const { message, line } = parsed.error;
-      setImportError(line === undefined ? message : `Line ${String(line)}: ${message}`);
+      setImportError(line === undefined ? message : t('palette.lineError', { line, message }));
       return;
     }
     setImportError(null);
@@ -137,7 +135,7 @@ export function PalettePanel() {
         {renamingName ? (
           <input
             className={styles.select}
-            aria-label="Palette name"
+            aria-label={t('palette.nameLabel')}
             defaultValue={palette.name}
             maxLength={60}
             // eslint-disable-next-line jsx-a11y/no-autofocus -- replaces the name the user chose to edit
@@ -163,7 +161,7 @@ export function PalettePanel() {
             <button
               type="button"
               className={styles.titleButton}
-              aria-label={`Palette: ${palette.name}. Activate to rename`}
+              aria-label={t('palette.rename', { name: palette.name })}
               onClick={() => {
                 setRenamingName(true);
               }}
@@ -172,19 +170,19 @@ export function PalettePanel() {
             </button>
           </h2>
         )}
-        <span className={styles.hint}>{total} / 256</span>
+        <span className={styles.hint}>{t('palette.count', { count: total })}</span>
       </div>
 
       <div className={styles.row}>
         <select
           className={styles.select}
-          aria-label="Load a preset palette"
+          aria-label={t('palette.loadPreset')}
           value=""
           onChange={(event) => {
             if (event.target.value !== '') actions.loadPreset(event.target.value);
           }}
         >
-          <option value="">Load preset…</option>
+          <option value="">{t('palette.presetPlaceholder')}</option>
           {PALETTE_PRESETS.map((preset) => (
             <option key={preset.id} value={preset.id}>
               {preset.name} ({String(preset.colors.length)})
@@ -194,8 +192,8 @@ export function PalettePanel() {
         <button
           type="button"
           className={styles.iconButton}
-          aria-label="Import palette file"
-          title="Import palette file (.gpl, .hex, .json)"
+          aria-label={t('palette.import')}
+          title={t('palette.importTip')}
           onClick={() => {
             fileInput.current?.click();
           }}
@@ -207,7 +205,7 @@ export function PalettePanel() {
           className={styles.visuallyHidden}
           type="file"
           accept=".gpl,.hex,.json,.txt,text/plain,application/json"
-          aria-label="Palette file"
+          aria-label={t('palette.fileLabel')}
           tabIndex={-1}
           onChange={(event) => {
             void onFile(event);
@@ -215,8 +213,8 @@ export function PalettePanel() {
         />
       </div>
 
-      <div className={styles.row} role="group" aria-label="Loading a palette">
-        <span className={styles.hint}>When loading:</span>
+      <div className={styles.row} role="group" aria-label={t('palette.loadingGroup')}>
+        <span className={styles.hint}>{t('palette.whenLoading')}</span>
         <div className={styles.segmented}>
           {(['replace', 'append'] as const).map((value) => (
             <button
@@ -228,7 +226,7 @@ export function PalettePanel() {
                 actions.setPaletteMode(value);
               }}
             >
-              {value === 'replace' ? 'Replace' : 'Add to current'}
+              {value === 'replace' ? t('palette.replace') : t('palette.append')}
             </button>
           ))}
         </div>
@@ -244,8 +242,8 @@ export function PalettePanel() {
         <button
           type="button"
           className={styles.iconButton}
-          aria-label="Add current color to the palette"
-          title="Add current color"
+          aria-label={t('palette.addCurrent')}
+          title={t('palette.addCurrentTip')}
           onClick={() => {
             actions.addColorToPalette();
           }}
@@ -255,8 +253,8 @@ export function PalettePanel() {
         <button
           type="button"
           className={styles.iconButton}
-          aria-label="Extract a palette from an image"
-          title="Extract palette from an image…"
+          aria-label={t('palette.extract')}
+          title={t('palette.extractTip')}
           onClick={() => {
             actions.openDialog('extract-palette');
           }}
@@ -266,8 +264,8 @@ export function PalettePanel() {
         <button
           type="button"
           className={styles.iconButton}
-          aria-label="Replace a color in the drawing"
-          title="Replace a color in the drawing…"
+          aria-label={t('palette.replaceColor')}
+          title={t('palette.replaceColorTip')}
           onClick={() => {
             actions.openDialog('replace-color');
           }}
@@ -276,23 +274,23 @@ export function PalettePanel() {
         </button>
         <select
           className={styles.select}
-          aria-label="Export format"
+          aria-label={t('palette.exportFormat')}
           value={format}
           onChange={(event) => {
             setFormat(event.target.value as PaletteFormat);
           }}
         >
           {FORMATS.map((option) => (
-            <option key={option.id} value={option.id}>
-              {option.label}
+            <option key={option} value={option}>
+              {t(`palette.format.${option}`)}
             </option>
           ))}
         </select>
         <button
           type="button"
           className={styles.iconButton}
-          aria-label="Export palette"
-          title="Export palette"
+          aria-label={t('palette.export')}
+          title={t('palette.export')}
           disabled={total === 0}
           onClick={() => {
             void exportPalette();
@@ -303,17 +301,17 @@ export function PalettePanel() {
       </div>
 
       {total === 0 ? (
-        <p className={styles.empty}>
-          The palette is empty. Add the current color, load a preset or extract colors from an
-          image.
-        </p>
+        <p className={styles.empty}>{t('palette.empty')}</p>
       ) : (
-        <div ref={gridRef} className={styles.grid} role="group" aria-label="Palette colors">
+        <div ref={gridRef} className={styles.grid} role="group" aria-label={t('palette.colors')}>
           {palette.colors.map((entry, index) => {
             const hex = toHex(entry.color).toUpperCase();
             const isPrimary = entry.color === (primary | 0xff000000) >>> 0;
             const isSecondary = entry.color === (secondary | 0xff000000) >>> 0;
-            const status = [isPrimary ? 'primary color' : '', isSecondary ? 'secondary color' : '']
+            const status = [
+              isPrimary ? t('palette.statusPrimary') : '',
+              isSecondary ? t('palette.statusSecondary') : '',
+            ]
               .filter(Boolean)
               .join(', ');
             return (
@@ -323,7 +321,13 @@ export function PalettePanel() {
                 background={toCssColor(entry.color)}
                 slot={isPrimary ? 'primary' : isSecondary ? 'secondary' : undefined}
                 dropTarget={dropIndex === index}
-                aria-label={`${entry.name ? `${entry.name}, ` : ''}${hex}, ${String(index + 1)} of ${String(total)}${status ? `, ${status}` : ''}`}
+                aria-label={t('palette.swatch', {
+                  name: entry.name ? `${entry.name}, ` : '',
+                  hex,
+                  index: index + 1,
+                  total,
+                  status: status ? `, ${status}` : '',
+                })}
                 title={entry.name ? `${entry.name} ${hex}` : hex}
                 tabIndex={index === activeIndex ? 0 : -1}
                 draggable
@@ -370,10 +374,10 @@ export function PalettePanel() {
         <div className={styles.row}>
           <input
             className={styles.select}
-            aria-label={`Name for ${toHex(renamingEntry.color).toUpperCase()}`}
+            aria-label={t('palette.nameFor', { hex: toHex(renamingEntry.color).toUpperCase() })}
             defaultValue={renamingEntry.name ?? ''}
             maxLength={60}
-            placeholder="Color name"
+            placeholder={t('palette.colorNamePlaceholder')}
             // eslint-disable-next-line jsx-a11y/no-autofocus -- opened on request to name this color
             autoFocus
             onKeyDown={(event) => {
@@ -390,12 +394,7 @@ export function PalettePanel() {
         </div>
       ) : null}
 
-      {total > 0 ? (
-        <p className={styles.hint}>
-          Click: primary. Shift+click or right click: secondary. Arrows move, Alt+arrows reorder, F2
-          renames, Delete removes.
-        </p>
-      ) : null}
+      {total > 0 ? <p className={styles.hint}>{t('palette.hint')}</p> : null}
     </section>
   );
 }

@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Button } from '../../design-system/Button';
 import { Dialog } from '../../design-system/Dialog';
 import { TextField } from '../../design-system/Field';
+import { useT } from '../../i18n/useT';
 import { useEditor } from '../../state/editor-context';
 import styles from './NewSpriteDialog.module.css';
 
@@ -12,6 +13,7 @@ export const DEFAULT_SPRITE_SIZE = 32;
 
 export function NewSpriteDialog() {
   const { session, store } = useEditor();
+  const t = useT();
   const [width, setWidth] = useState(String(DEFAULT_SPRITE_SIZE));
   const [height, setHeight] = useState(String(DEFAULT_SPRITE_SIZE));
   const [name, setName] = useState('');
@@ -30,25 +32,25 @@ export function NewSpriteDialog() {
     if (result.ok) {
       close();
     } else {
-      setError(`Width and height must be whole numbers from 1 to ${String(MAX_CANVAS_SIZE)}.`);
+      setError(t('newSprite.error', { max: MAX_CANVAS_SIZE }));
     }
   };
 
   return (
     <Dialog
-      title="New sprite"
+      title={t('newSprite.title')}
       onClose={close}
       onSubmit={create}
       footer={
         <>
-          <Button onClick={close}>Cancel</Button>
+          <Button onClick={close}>{t('common.cancel')}</Button>
           <Button type="submit" variant="primary">
-            Create
+            {t('newSprite.create')}
           </Button>
         </>
       }
     >
-      <div className={styles.presets} role="group" aria-label="Size presets">
+      <div className={styles.presets} role="group" aria-label={t('newSprite.presets')}>
         {PRESETS.map((size) => (
           <Button
             key={size}
@@ -65,7 +67,7 @@ export function NewSpriteDialog() {
       </div>
       <div className={styles.row}>
         <TextField
-          label="Width (px)"
+          label={t('newSprite.width')}
           type="number"
           inputMode="numeric"
           min={1}
@@ -77,7 +79,7 @@ export function NewSpriteDialog() {
           }}
         />
         <TextField
-          label="Height (px)"
+          label={t('newSprite.height')}
           type="number"
           inputMode="numeric"
           min={1}
@@ -90,10 +92,10 @@ export function NewSpriteDialog() {
         />
       </div>
       <TextField
-        label="Name (optional)"
+        label={t('newSprite.name')}
         value={name}
         maxLength={60}
-        placeholder="Untitled"
+        placeholder={t('newSprite.namePlaceholder')}
         onChange={(event) => {
           setName(event.target.value);
         }}
@@ -103,9 +105,7 @@ export function NewSpriteDialog() {
           {error}
         </p>
       ) : (
-        <p className={styles.hint}>
-          Creating a sprite replaces the current one. Unsaved work is lost.
-        </p>
+        <p className={styles.hint}>{t('newSprite.hint')}</p>
       )}
     </Dialog>
   );
