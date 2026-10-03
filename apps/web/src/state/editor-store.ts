@@ -97,6 +97,8 @@ export interface EditorState {
   readonly saveStatus: SaveStatus;
   /** Why saving failed, when it did. */
   readonly saveDetail: string;
+  /** A new version of the app is downloaded and waiting. */
+  readonly updateReady: boolean;
   readonly paletteMode: PaletteLoadMode;
   readonly viewport: Viewport;
   readonly viewSize: { readonly width: number; readonly height: number };
@@ -114,6 +116,7 @@ export interface EditorActions {
   t(key: MessageKey, params?: MessageParams): string;
   setLanguage(language: Language): void;
   setSaveStatus(status: SaveStatus, detail?: string): void;
+  setUpdateReady(ready: boolean): void;
   renameSprite(name: string): void;
   /** Shows a short message in the status bar and announces it to screen readers. */
   notify(message: string): void;
@@ -238,6 +241,7 @@ export function createEditorStore(
     language: initialLanguage,
     saveStatus: 'saved',
     saveDetail: '',
+    updateReady: false,
     paletteMode: 'replace',
     viewport: centerViewport(
       1,
@@ -264,6 +268,9 @@ export function createEditorStore(
     },
     renameSprite: (name) => {
       session.document.renameSprite(name);
+    },
+    setUpdateReady: (updateReady) => {
+      set({ updateReady });
     },
     notify: (message) => {
       showNotice(message);

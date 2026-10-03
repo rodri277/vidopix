@@ -3,6 +3,7 @@ import '@fontsource-variable/jetbrains-mono';
 import { EditorSession } from '@vidopix/core';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
+import { registerSW } from 'virtual:pwa-register';
 import { localEmergencyStore } from '../adapters/emergency-store';
 import { createIdbStorage } from '../adapters/idb-storage';
 import { randomIdGenerator } from '../adapters/id-generator';
@@ -76,10 +77,28 @@ const projects = createProjectService({
   newId: () => randomIdGenerator.next(),
 });
 
+// The service worker makes the app work offline. A new version waits until the user agrees to it.
+const updateServiceWorker = registerSW({
+  onNeedRefresh() {
+    store.getState().setUpdateReady(true);
+  },
+});
+
 createRoot(container).render(
   <StrictMode>
     <ErrorBoundary>
-      <App session={session} store={store} services={{ projects }} />
+      <App
+        session={session}
+        store={store}
+        services={{ projects }}
+        onUpdate={() => {
+          // Keep the drawing safe first, then let the new version take over and reload.
+          persistence.snapshotNow();
+          void persistence.flush().finally(() => {
+            void updateServiceWorker(true);
+          });
+        }}
+      />
     </ErrorBoundary>
   </StrictMode>,
 );

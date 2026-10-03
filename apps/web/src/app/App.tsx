@@ -25,9 +25,11 @@ interface Props {
   readonly session: EditorSession;
   readonly store: EditorStore;
   readonly services: EditorServices;
+  /** Installs a waiting update of the app, when there is one. */
+  readonly onUpdate?: () => void;
 }
 
-function Editor({ session, store }: Omit<Props, 'services'>) {
+function Editor({ session, store, onUpdate }: Omit<Props, 'services'>) {
   const panelsHidden = useEditorState((state) => state.panelsHidden);
   const { services } = useEditor();
   useGlobalShortcuts(session, store, services);
@@ -52,7 +54,7 @@ function Editor({ session, store }: Omit<Props, 'services'>) {
             />
           </>
         }
-        status={<StatusBar />}
+        status={<StatusBar {...(onUpdate ? { onUpdate } : {})} />}
       />
       <Dialogs />
       <Announcer />
@@ -61,10 +63,10 @@ function Editor({ session, store }: Omit<Props, 'services'>) {
 }
 
 /** Wires the editing session to the interface. The only place features are put together. */
-export function App({ session, store, services }: Props) {
+export function App({ session, store, services, onUpdate }: Props) {
   return (
     <EditorProvider session={session} store={store} services={services}>
-      <Editor session={session} store={store} />
+      <Editor session={session} store={store} {...(onUpdate ? { onUpdate } : {})} />
     </EditorProvider>
   );
 }

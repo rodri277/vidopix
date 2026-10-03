@@ -1,7 +1,13 @@
 import { useT } from '../../i18n/useT';
+import styles from './StatusBar.module.css';
 import { useEditorState } from '../../state/editor-context';
 
-export function StatusBar() {
+interface Props {
+  /** Installs the waiting version of the app and reloads. */
+  readonly onUpdate?: () => void;
+}
+
+export function StatusBar({ onUpdate }: Props) {
   const t = useT();
   const cursor = useEditorState((state) => state.cursor);
   const keyboardCursor = useEditorState((state) => state.keyboardCursor);
@@ -13,6 +19,7 @@ export function StatusBar() {
   const notice = useEditorState((state) => state.notice);
   const saveStatus = useEditorState((state) => state.saveStatus);
   const saveDetail = useEditorState((state) => state.saveDetail);
+  const updateReady = useEditorState((state) => state.updateReady);
   const position = keyboardCursor ?? cursor;
 
   const saveText =
@@ -36,7 +43,13 @@ export function StatusBar() {
           : ''}
       </span>
       <span>{notice === '' ? saveText : notice}</span>
-      <span>{t('status.byline')}</span>
+      {updateReady && onUpdate ? (
+        <button type="button" className={styles.update} onClick={onUpdate}>
+          {t('status.reloadToUpdate')}
+        </button>
+      ) : (
+        <span>{t('status.byline')}</span>
+      )}
     </>
   );
 }
