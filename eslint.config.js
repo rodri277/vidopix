@@ -47,18 +47,27 @@ export default tseslint.config(
     languageOptions: { globals: {} },
   },
   {
-    files: ['apps/web/**/*.{ts,tsx}'],
-    languageOptions: { globals: globals.browser },
     ...jsxA11y.flatConfigs.strict,
+    files: ['apps/web/**/*.{ts,tsx}'],
   },
   {
     files: ['apps/web/**/*.{ts,tsx}'],
+    languageOptions: { globals: globals.browser },
     plugins: { 'react-hooks': reactHooks },
     rules: reactHooks.configs.recommended.rules,
   },
   {
     files: ['**/*.config.{js,ts}', 'eslint.config.js'],
     rules: { 'no-restricted-exports': 'off' },
+  },
+  {
+    ...tseslint.configs.disableTypeChecked,
+    files: [
+      'tools/**/*.mjs',
+      'eslint.config.js',
+      'commitlint.config.js',
+      '.dependency-cruiser.cjs',
+    ],
   },
   {
     files: [
@@ -68,6 +77,10 @@ export default tseslint.config(
       '.dependency-cruiser.cjs',
     ],
     languageOptions: { globals: globals.node },
-    ...tseslint.configs.disableTypeChecked,
+  },
+  {
+    files: ['.dependency-cruiser.cjs'],
+    languageOptions: { sourceType: 'commonjs' },
+    rules: { '@typescript-eslint/no-require-imports': 'off' },
   },
 );
