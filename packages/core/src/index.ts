@@ -87,3 +87,19 @@ export type { ProgressFn } from './algorithms/median-cut.js';
 export { PALETTE_PRESETS, presetToColors } from './data/palette-presets.js';
 export type { PalettePreset } from './data/palette-presets.js';
 export { bytesToBase64, base64ToBytes } from './io/bytes.js';
+export {
+  MAX_SHARE_DECODED_BYTES,
+  SHARE_MAX_FRAGMENT_CHARS,
+  decodeShare,
+  encodeShare,
+  readShareFragment,
+  shareFragment,
+} from './io/share-format.js';
+export type { ShareError } from './io/share-format.js';
+export {
+  MAX_PROJECT_BYTES,
+  PROJECT_SCHEMA_VERSION,
+  parseProject,
+  serializeProject,
+} from './io/project-format.js';
+export type { ProjectParseError } from './io/project-format.js';
