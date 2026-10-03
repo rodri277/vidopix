@@ -2,64 +2,115 @@
 
 [Español](README.es.md)
 
-A pixel art editor that runs in your browser: no install, no account, and a built-in palette generator.
+A pixel art editor that runs in your browser: no install, no account, and a built-in palette generator. By vidotho.
 
-> **Status:** v1.1.0. The live demo link and screenshots are added once the app is deployed.
+![A slime squashing and stretching, exported from Vidopix as an animated GIF](docs/media/header.gif)
+
+> **Status:** v1.1.0, all phases of [SPEC.md](SPEC.md) done. The slime above was drawn in the editor and exported with its own GIF export. The live demo link is added once the app is deployed (see [Deploying](#deploying)).
+
+![The editor with an animation, its timeline and onion skin](docs/media/animation.png)
 
 ## Goals
 
 - A portfolio piece that shows architecture, algorithms, performance and product design.
 - Genuinely usable: an artist should be able to make a 64×64 sprite from start to finish and export it.
-- Fast to load and, from Phase 4, usable offline.
+- Fast to load and usable offline.
 
-## What it does today
+## What it does
 
-- Pencil, eraser (1 to 16 px), fill (contiguous or global, with tolerance), eyedropper, line, rectangle and ellipse. Shift constrains lines to 0/45/90 degrees and shapes to squares and circles.
-- Integer zoom from 1x to 64x anchored on the pointer, panning, pixel grid, transparency checkerboard.
-- Primary and secondary colors with hex and OKLCH sliders.
+**Drawing** (phases 1 and 2)
+
+- Pencil, eraser (1 to 16 px), fill (contiguous or global, with tolerance), eyedropper, line, rectangle and ellipse (outline or filled). Shift constrains lines to 0/45/90 degrees and shapes to squares and circles.
+- Integer zoom from 1× to 64× anchored on the pointer, panning, pixel grid and a transparency checkerboard.
+- Layers (add, duplicate, delete, rename, reorder, hide, lock, opacity, merge down, flatten), rectangular selection, move, copy, cut, paste and delete.
 - Undo and redo that never run out of steps, only out of a memory budget (64 MB by default).
-- Layers (add, duplicate, delete, rename, reorder, hide, lock, opacity, merge down, flatten), all undoable.
-- Rectangular selection, move, copy, cut, paste and delete; every tool respects the selection.
-- A palette per sprite with six presets, import and export (`.gpl`, `.hex`, JSON), extraction from any image (median cut, in a worker), OKLCH harmonies, hue-shifted shade ramps, a WCAG contrast checker and replace color.
-- Symmetry, ordered dithering, a pixel-perfect pencil, pen pressure, and touch gestures (pinch to zoom, two fingers to pan).
-- Saved automatically in your browser (nothing is uploaded), recent projects, `.vidopix` files and share links that carry the sprite inside the URL.
-- Installable and usable offline.
-- The interface in English and Spanish.
-- Animation: a timeline with frames of any duration, looping playback, onion skin, and export as animated GIF or as a spritesheet with a JSON file of coordinates.
-- PNG export at 1x to 32x.
-- Fully usable from the keyboard: arrow keys move a pixel cursor, hold Enter to draw.
+- Symmetry, ordered dithering, a pixel-perfect pencil, pen pressure and touch gestures.
+- Fully usable from the keyboard: arrow keys move a pixel cursor and holding Enter draws.
 
-## Measured performance
+![The editor with layers](docs/media/editor.png)
 
-Numbers from this repository's own benchmarks and E2E run on the author's machine (Apple silicon Mac, headless Chromium). They are not estimates; run `pnpm bench` and `pnpm e2e` to reproduce them on yours.
+**Palettes** (phase 3)
 
-| Metric                                         | Target       | Measured                              |
+- A palette per sprite with six presets, import and export (`.gpl`, `.hex`, JSON), and extraction from any image (median cut, in a worker).
+- OKLCH harmonies, hue-shifted shade ramps, a WCAG contrast checker, and replace color across layers.
+
+![A palette panel with the PICO-8 preset](docs/media/palette.png) ![Color harmonies and shade ramps](docs/media/generate.png)
+
+**Saving and sharing** (phase 4)
+
+- Saved automatically in your browser (nothing is uploaded), a list of recent projects, `.vidopix` files, and links that carry the sprite inside the URL.
+- Installable and usable offline. The interface in English and Spanish.
+
+![The recent projects list in Spanish](docs/media/recent-es.png)
+
+**Animation** (phase 5)
+
+- A timeline of frames with a duration each, looping playback, onion skin, and export as an animated GIF or as a spritesheet with a JSON file of coordinates. PNG export at 1× to 32×.
+
+![Exporting an animated GIF](docs/media/export.png)
+
+## Technical highlights
+
+Numbers come from this repository's own benchmarks and end-to-end tests on the author's machine (Apple silicon Mac, headless Chromium). They are measured, not estimated; run `pnpm bench` and `pnpm e2e` to reproduce them on yours.
+
+| Challenge                                      | Target       | Measured                              |
 | ---------------------------------------------- | ------------ | ------------------------------------- |
 | Flood fill 1024×1024, algorithm only           | < 50 ms      | about 12 ms                           |
 | Flood fill 1024×1024, including the undo patch | < 50 ms      | about 34 ms                           |
 | Frame time while drawing on 256×256            | 60 fps       | 16.7 ms mean (vsync-limited)          |
-| 500 strokes undone and redone on 256×256       | within 64 MB | passes (unit test)                    |
+| Frame time drawing over 8 layers at 256×256    | 60 fps       | 16.7 ms mean (vsync-limited)          |
 | Playing 32 frames of 64×64                     | 60 fps       | 16.7 ms mean (vsync-limited)          |
+| 500 strokes undone and redone on 256×256       | within 64 MB | passes (unit test)                    |
 | GIF of 32 frames of 64×64, in a worker         | responsive   | about 50 ms to encode (exact palette) |
 | Initial JavaScript (gzip)                      | < 150 kB     | 128 kB                                |
+| Lighthouse (desktop preset)                    | ≥ 95         | 100 / 100 / 100 / 100                 |
 
-Lighthouse was measured with `pnpm lighthouse` on the production build with the desktop preset. The page is designed for screens at least 768 px wide, so a phone-sized mobile run is not a target.
+What makes them hold:
 
-## Known limits
-
-- The layout needs at least 768 px of width; phones are not supported, tablets are.
-- Only Chromium is covered by the automated tests. Safari and Firefox need a manual check, especially for installing the app, the system clipboard, `CompressionStream` links and touch.
-- A project can be at most 1024×1024 pixels, 64 layers, 128 frames and 20 MB (and 256 MB of pixels in memory). A link can carry about 6000 characters, which is plenty for flat-color pixel art and not enough for large or noisy sprites.
-- A GIF has a single palette of 256 colors and no partial transparency, so an image with more colors is reduced and pixels more than half transparent become opaque or transparent. Quantizing thousands of colors takes about half a second.
-- Details of errors that come from reading palette or project files are technical and stay in English.
-
-## Stack
-
-TypeScript (strict), React, Vite, pnpm workspaces, Vitest + fast-check, Playwright + axe-core, ESLint, Prettier, dependency-cruiser, GitHub Actions and Vercel. See [SPEC.md](SPEC.md) section 3 for the reasoning.
+- **Pixels are packed RGBA in a `Uint32Array`** that shares memory with `ImageData`, so painting needs no copy ([ADR 003](docs/adr/003-packed-rgba-in-uint32array.md)).
+- **History stores patches, not snapshots**, and has a memory budget instead of a step count ([ADR 004](docs/adr/004-patch-based-history.md)). Property tests check that applying and reverting any command restores the buffer byte for byte.
+- **The renderer redraws only dirty rectangles**, in whole-number device-pixel scales so art pixels stay sharp at any pixel ratio ([ADR 009](docs/adr/009-whole-number-device-pixel-scale.md)).
+- **Colors are generated in OKLCH**, with out-of-gamut colors fixed by lowering chroma ([ADR 006](docs/adr/006-oklch-for-palette-tools.md)).
+- **Heavy work runs off the main thread**: palette extraction and GIF encoding are Web Workers you can cancel ([ADR 012](docs/adr/012-palette-extraction-in-a-worker.md), [ADR 017](docs/adr/017-gif-export-in-a-worker.md)).
+- **Files are versioned and validated.** `.vidopix` files and share links carry a version, old ones are migrated, and a damaged file returns an error instead of crashing ([ADR 007](docs/adr/007-versioned-project-format.md)).
+- **Animation is one cel per layer per frame**, with `layer.buffer` always pointing at the active frame, so tools needed no change ([ADR 016](docs/adr/016-one-cel-per-layer-per-frame.md)).
+- **Reloading never loses work**: autosave to IndexedDB plus a synchronous emergency copy ([ADR 013](docs/adr/013-offline-first-and-saving.md)).
 
 ## Architecture
 
-A pure TypeScript engine (`packages/core`, no DOM) and a React app (`apps/web`) that only paints and translates events. The boundary is enforced in CI. See [docs/architecture.md](docs/architecture.md) and the [ADRs](docs/adr).
+A pure TypeScript engine (`packages/core`, no DOM) and a React app (`apps/web`) that only paints and translates events. The boundary is enforced in CI.
+
+```mermaid
+flowchart TD
+  subgraph web["apps/web (React, browser)"]
+    UI["Panels, dialogs, timeline"]
+    Store["Zustand store (mirrors session events)"]
+    Renderer["Canvas 2D renderer"]
+    Input["Pointer and keyboard input"]
+    Workers["Web Workers: palette, GIF"]
+    Storage["IndexedDB, service worker"]
+  end
+  subgraph core["packages/core (pure TypeScript)"]
+    Session["EditorSession"]
+    Doc["DocumentEditor: layers, frames, selection, history"]
+    Tools["Tools"]
+    Domain["Domain: PixelBuffer, Sprite, Color, OKLCH"]
+    IO["Formats: .vidopix, share link, PNG, GIF, spritesheet"]
+  end
+  Input --> Session
+  UI --> Store --> Session
+  Session --> Tools --> Doc --> Domain
+  Doc -. events .-> Store
+  Doc -. dirty rectangles .-> Renderer
+  Workers --> IO
+  Storage --> IO
+```
+
+See [docs/architecture.md](docs/architecture.md) and the [decision records](docs/adr/README.md).
+
+## Stack
+
+TypeScript (strict), React, Vite, pnpm workspaces, Zustand, Zod, gifenc, Vitest + fast-check, Playwright + axe-core, ESLint, Prettier, dependency-cruiser, GitHub Actions and Vercel. See [SPEC.md](SPEC.md) section 3 for the reasoning.
 
 ## Getting started
 
@@ -70,11 +121,41 @@ pnpm install
 pnpm dev
 ```
 
-Useful scripts: `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm build`, `pnpm e2e`.
+| Command           | What it does                                                    |
+| ----------------- | --------------------------------------------------------------- |
+| `pnpm lint`       | ESLint and the architecture boundaries                          |
+| `pnpm typecheck`  | TypeScript in every package                                     |
+| `pnpm test`       | Core tests (coverage at least 90%), component tests, boundaries |
+| `pnpm e2e`        | Playwright and axe against the production build                 |
+| `pnpm bench`      | Core benchmarks                                                 |
+| `pnpm build`      | Production build                                                |
+| `pnpm size`       | Bundle size budget                                              |
+| `pnpm lighthouse` | Lighthouse on the production build                              |
+| `pnpm media`      | Regenerates the screenshots and header GIF of this README       |
+
+## Deploying
+
+`vercel.json` is ready (build command, output folder and a strict Content Security Policy). To publish: import the repository in Vercel and keep the defaults; every pull request then gets a preview. Add the resulting address to the top of this file.
+
+## Known limits
+
+- The layout needs at least 768 px of width; phones are not supported, tablets are.
+- Only Chromium is covered by the automated tests. Safari and Firefox need a manual check, especially for installing the app, the system clipboard, `CompressionStream` links and touch.
+- A project can be at most 1024×1024 pixels, 64 layers, 128 frames and 20 MB (and 256 MB of pixels in memory). A link can carry about 6000 characters, which is plenty for flat-color pixel art and not enough for large or noisy sprites.
+- A GIF has a single palette of 256 colors and no partial transparency, so an image with more colors is reduced and pixels more than half transparent become opaque or transparent. Quantizing thousands of colors takes about half a second.
+- The sprite and layer names a new project starts with ("Untitled", "Layer 1") are stored text and stay in English. Details of errors from reading palette or project files are technical and stay in English too.
+
+## Roadmap
+
+Ideas, not commitments: import a GIF or a spritesheet, export APNG or animated WebP, per-frame layer links, and a manual pass in Safari and Firefox.
 
 ## How this was built
 
-Developed with Claude Code from a written specification ([SPEC.md](SPEC.md)). This section will cover what was asked, what was reviewed and decided by the author, and what was corrected, once there is more to tell.
+Developed with [Claude Code](https://claude.com/claude-code) from a written specification ([SPEC.md](SPEC.md)), one phase at a time.
+
+- **What was asked.** For each of the six phases the specification set the scope and the acceptance criteria. Claude Code started every phase with a short plan (tasks, files, risks), worked test-first in the engine, wrote an ADR for each relevant decision, and opened one pull request per phase.
+- **What the author reviewed and decided.** The author approved each phase plan and answered its open questions, reviewed each pull request before it was merged, and made the project decisions: a public repository, and which defaults to ship (for example the 100 ms default frame duration and the red/blue onion skin).
+- **What was corrected along the way.** Some problems showed up only when measuring, and were fixed rather than left: reloading right after a change lost work (now a synchronous emergency copy); Zod's code generation broke the Content Security Policy (now it runs without `eval`); the first bundle went over budget (file formats and Zod now load on demand); a Lighthouse accessibility check caught frame-duration fields smaller than 24 px; and a manual pass found the tool options bar squeezing its controls on narrow windows.
 
 ## Palette credits
 

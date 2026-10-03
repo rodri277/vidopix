@@ -19,6 +19,7 @@ pnpm bench            # core benchmarks (fill, strokes); prints a table, asserts
 pnpm build            # production build of apps/web
 pnpm size             # bundle size budget (150 kB gzip)
 pnpm e2e              # Playwright + axe against the production build
+pnpm media            # regenerate README screenshots and header GIF (needs `pnpm build` and a running `pnpm --filter @vidopix/web preview`)
 ```
 
 Before closing any task: `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm e2e` if the UI changed. All green.
