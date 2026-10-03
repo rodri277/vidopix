@@ -14,7 +14,10 @@ export interface Rgba {
   readonly a: number;
 }
 
-export type ColorParseError = { readonly kind: 'invalid-hex'; readonly input: string };
+export interface ColorParseError {
+  readonly kind: 'invalid-hex';
+  readonly input: string;
+}
 
 export function packRgba(r: number, g: number, b: number, a: number): Color {
   return ((a << 24) | (b << 16) | (g << 8) | r) >>> 0;
@@ -41,15 +44,12 @@ const HEX_PATTERN = /^[0-9a-f]+$/i;
 
 export function parseHex(input: string): Result<Color, ColorParseError> {
   const digits = input.startsWith('#') ? input.slice(1) : input;
-  const expanded =
-    digits.length === 3
-      ? [...digits].map((digit) => digit + digit).join('')
-      : digits;
 
-  if ((expanded.length !== 6 && expanded.length !== 8) || !HEX_PATTERN.test(expanded)) {
+  if (![3, 6, 8].includes(digits.length) || !HEX_PATTERN.test(digits)) {
     return err({ kind: 'invalid-hex', input });
   }
 
+  const expanded = digits.length === 3 ? digits.replace(/./g, '$&$&') : digits;
   const channel = (index: number): number => parseInt(expanded.slice(index * 2, index * 2 + 2), 16);
   const alpha = expanded.length === 8 ? channel(3) : 255;
   return ok(packRgba(channel(0), channel(1), channel(2), alpha));
