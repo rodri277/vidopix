@@ -105,12 +105,18 @@ createRoot(container).render(
 
 // Load what saving needs ahead of time. If the first save only started when the page was being
 // closed, the browser could cancel the download of that code and the last changes would be lost.
+let warmedUp = false;
 const warmUp = (): void => {
+  if (warmedUp) return;
+  warmedUp = true;
   void persistence.warmUp();
   void storage.getLastId();
 };
+// Safari has no idle callbacks, so there it starts right after the first task. A first edit also
+// starts it, in case the user is quicker than either.
 if ('requestIdleCallback' in window) window.requestIdleCallback(warmUp);
-else setTimeout(warmUp, 200);
+else setTimeout(warmUp, 0);
+session.on('historyChanged', warmUp);
 
 // Save when the page is about to go away, so a closed tab or a reload loses nothing.
 const flush = (): void => {

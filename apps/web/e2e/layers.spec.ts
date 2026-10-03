@@ -122,7 +122,15 @@ test('selecting limits drawing, and the selection can be moved and dropped', asy
   expect(paintedPixels(await exportPng(page))).toEqual(new Set(['4,5', '5,5', '6,5', '7,5']));
 });
 
-test('copy and paste float the content until it is dropped', async ({ page, context }) => {
+test('copy and paste float the content until it is dropped', async ({
+  page,
+  context,
+  browserName,
+}) => {
+  test.skip(
+    browserName !== 'chromium',
+    'Playwright can only grant clipboard permissions in Chromium',
+  );
   await context.grantPermissions(['clipboard-read', 'clipboard-write']);
   await setPrimaryColor(page, '#FF0000');
   const canvas = await readCanvas(page);

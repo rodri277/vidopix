@@ -143,7 +143,11 @@ test('recent projects lists, opens and deletes projects', async ({ page }) => {
   await expect(items).toHaveCount(1);
 });
 
-test('a shared link reproduces the sprite exactly', async ({ page, context }) => {
+test('a shared link reproduces the sprite exactly', async ({ page, context, browserName }) => {
+  test.skip(
+    browserName !== 'chromium',
+    'Playwright can only grant clipboard permissions in Chromium',
+  );
   await context.grantPermissions(['clipboard-read', 'clipboard-write']);
   await ready(page);
   await draw(page, '#FF8800', 7, 3);
