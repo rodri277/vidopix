@@ -14,7 +14,8 @@ pnpm dev              # run the web app
 pnpm lint             # ESLint (strict type-checked) + architecture boundaries
 pnpm format:check     # Prettier
 pnpm typecheck        # tsc in every package
-pnpm test             # core unit/property tests with coverage + boundary tests
+pnpm test             # core (coverage) + web component tests + boundary tests
+pnpm bench            # core benchmarks (fill, strokes); prints a table, asserts nothing
 pnpm build            # production build of apps/web
 pnpm size             # bundle size budget (150 kB gzip)
 pnpm e2e              # Playwright + axe against the production build
@@ -30,6 +31,14 @@ Before closing any task: `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm e
 - Boundaries are enforced by dependency-cruiser (`.dependency-cruiser.cjs`) and proven by `tools/check-boundaries.test.mjs`.
 - `features/*` never import each other; share through `state/` or `design-system/`.
 - Architecture decisions live in `docs/adr/`. Add an ADR for every relevant decision.
+
+## Where things live
+
+- `EditorSession` (core) is the only door to the document. Tools are strategies in `packages/core/src/tools`.
+- Pure viewport math is in the core (`viewport/`); the renderer (`apps/web/src/adapters/canvas-renderer.ts`) only applies it.
+- UI state is a Zustand store (`apps/web/src/state/editor-store.ts`) that mirrors session events (ADR 005).
+- Keyboard shortcuts are defined in one place: `apps/web/src/state/shortcuts.ts`.
+- `app/App.tsx` is the only place features are composed; `features/*` never import each other.
 
 ## Conventions
 
@@ -52,5 +61,5 @@ Before closing any task: `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm e
 
 ## Toolchain notes
 
-- TypeScript is pinned to 6.0.x and ESLint to 9.39.x until `typescript-eslint` and `eslint-plugin-jsx-a11y` support the newer majors (ADR 003).
+- TypeScript is pinned to 6.0.x and ESLint to 9.39.x until `typescript-eslint` and `eslint-plugin-jsx-a11y` support the newer majors (ADR 008).
 - Vite inlining of assets is disabled so the strict CSP (`vercel.json` and `apps/web/vite.config.ts`, kept in sync) holds.

@@ -1,0 +1,11 @@
+.logo {
+  width: 12px;
+  height: 12px;
+  background: var(--accent);
+}
+
+.title {
+  margin: 0;
+  font-size: var(--font-size-base);
+  font-weight: 600;
+}

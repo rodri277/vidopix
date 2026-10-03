@@ -44,8 +44,11 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
 
-      - name: Unit, property and boundary tests
+      - name: Unit, property, component and boundary tests
         run: pnpm test
+
+      - name: Benchmarks (report only)
+        run: pnpm bench
 
       - name: Build
         run: pnpm build

@@ -1,8 +1,10 @@
-.shell {
+.layout {
   display: grid;
   height: 100%;
-  grid-template-columns: var(--toolbar-width) 1fr var(--side-panel-width);
-  grid-template-rows: var(--topbar-height) var(--options-height) 1fr var(--statusbar-height);
+  grid-template-columns: var(--toolbar-width) minmax(0, 1fr) var(--side-panel-width);
+  grid-template-rows: var(--topbar-height) var(--options-height) minmax(0, 1fr) var(
+      --statusbar-height
+    );
   grid-template-areas:
     'top top top'
     'options options options'
@@ -10,7 +12,20 @@
     'status status status';
 }
 
-.topbar,
+.layout[data-panels-hidden='true'] {
+  grid-template-columns: 0 minmax(0, 1fr) 0;
+  grid-template-rows: var(--topbar-height) 0 minmax(0, 1fr) 0;
+}
+
+.layout[data-panels-hidden='true'] .options,
+.layout[data-panels-hidden='true'] .tools,
+.layout[data-panels-hidden='true'] .side,
+.layout[data-panels-hidden='true'] .status {
+  visibility: hidden;
+  overflow: hidden;
+}
+
+.top,
 .options,
 .tools,
 .side,
@@ -18,7 +33,7 @@
   background: var(--bg-panel);
 }
 
-.topbar {
+.top {
   grid-area: top;
   display: flex;
   align-items: center;
@@ -27,24 +42,14 @@
   border-bottom: 1px solid var(--border);
 }
 
-.logo {
-  width: 12px;
-  height: 12px;
-  background: var(--accent);
-}
-
-.title {
-  margin: 0;
-  font-size: var(--font-size-base);
-  font-weight: 600;
-}
-
 .options {
   grid-area: options;
   display: flex;
   align-items: center;
+  gap: var(--space-4);
   padding: 0 var(--space-3);
   border-bottom: 1px solid var(--border);
+  min-width: 0;
 }
 
 .tools {
@@ -54,15 +59,17 @@
 
 .canvas {
   grid-area: canvas;
-  display: grid;
-  place-items: center;
+  position: relative;
+  min-width: 0;
+  min-height: 0;
   background: var(--bg-app);
+  overflow: hidden;
 }
 
 .side {
   grid-area: side;
   border-left: 1px solid var(--border);
-  padding: var(--space-3);
+  overflow-y: auto;
 }
 
 .status {
@@ -70,14 +77,10 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: var(--space-4);
   padding: 0 var(--space-3);
   border-top: 1px solid var(--border);
   color: var(--text-muted);
   font-family: var(--font-mono);
   font-size: 11px;
-}
-
-.placeholder {
-  margin: 0;
-  color: var(--text-muted);
 }

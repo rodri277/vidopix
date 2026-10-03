@@ -1,6 +1,6 @@
 {
   "name": "vidopix",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "private": true,
   "type": "module",
   "description": "Browser-based pixel art editor with a built-in palette generator. By vidotho.",
@@ -16,11 +16,12 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "typecheck": "pnpm -r typecheck",
-    "test": "pnpm --filter @vidopix/core test && node --test tools/check-boundaries.test.mjs",
+    "test": "pnpm --filter @vidopix/core test && pnpm --filter @vidopix/web test && node --test tools/check-boundaries.test.mjs",
     "e2e": "pnpm --filter @vidopix/web e2e",
     "deps:check": "depcruise packages/core/src apps/web/src --config .dependency-cruiser.cjs",
     "size": "pnpm --filter @vidopix/web size",
-    "prepare": "husky"
+    "prepare": "husky",
+    "bench": "pnpm --filter @vidopix/core bench"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.2.3",

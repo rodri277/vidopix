@@ -1,6 +1,6 @@
 {
   "name": "@vidopix/core",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "private": true,
   "type": "module",
   "description": "Pure TypeScript editing engine for Vidopix. No DOM.",
@@ -11,12 +11,13 @@
   "scripts": {
     "test": "vitest run --coverage",
     "test:watch": "vitest",
-    "bench": "vitest bench",
+    "bench": "vitest run --config vitest.bench.config.ts",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
     "@vitest/coverage-v8": "^5.0.3",
     "fast-check": "^4.10.2",
+    "tinybench": "^6.2.0",
     "vitest": "^5.0.3"
   }
 }
