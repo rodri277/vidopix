@@ -1,9 +1,12 @@
 import type { EditorSession } from '@vidopix/core';
 import { AppLayout } from '../design-system/AppLayout';
+import { Tabs } from '../design-system/Tabs';
 import { Announcer } from '../features/a11y/Announcer';
 import { CanvasView } from '../features/canvas/CanvasView';
 import { ColorPanel } from '../features/color/ColorPanel';
 import { LayersPanel } from '../features/layers/LayersPanel';
+import { GeneratePanel } from '../features/palette/GeneratePanel';
+import { PalettePanel } from '../features/palette/PalettePanel';
 import { Dialogs } from '../features/dialogs/Dialogs';
 import { AppMenu } from '../features/menu/AppMenu';
 import { StatusBar } from '../features/statusbar/StatusBar';
@@ -32,7 +35,14 @@ function Editor({ session, store }: Props) {
         side={
           <>
             <LayersPanel />
-            <ColorPanel />
+            <Tabs
+              label="Color tools"
+              tabs={[
+                { id: 'color', label: 'Color', content: <ColorPanel /> },
+                { id: 'palette', label: 'Palette', content: <PalettePanel /> },
+                { id: 'generate', label: 'Generate', content: <GeneratePanel /> },
+              ]}
+            />
           </>
         }
         status={<StatusBar />}

@@ -1,0 +1,27 @@
+.swatch {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.swatch:hover {
+  border-color: #fff;
+}
+
+.swatch[data-slot='primary'] {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.swatch[data-slot='secondary'] {
+  outline: 2px dashed var(--text-muted);
+  outline-offset: 1px;
+}
+
+.swatch[data-drop='true'] {
+  box-shadow: -3px 0 0 var(--accent);
+}
