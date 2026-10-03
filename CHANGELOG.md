@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses [Semantic Versioning](https://semver.org/).
 
+## [1.2.1] - 2026-10-03
+
+### Fixed
+
+- The header animation had a stray white dot in its last frames and its stars never twinkled: the selection used to clear the slime was still active and clipped the star edits. Stars now twinkle in every frame, away from the title and the slime's path.
+
 ## [1.2.0] - 2026-10-03
 
 ### Added
