@@ -13,4 +13,4 @@ All notable changes to this project are documented here. The format follows [Kee
 - Architecture boundary checks with dependency-cruiser, and tests proving they fail on violations.
 - Playwright E2E smoke test with axe-core accessibility checks, run against the production build.
 - GitHub Actions pipeline (lint, typecheck, tests with coverage, build, bundle size, E2E), Vercel deployment config with a strict CSP, and Dependabot.
-- `CLAUDE.md`, READMEs (English and Spanish), architecture document and ADRs 001 to 003.
+- `CLAUDE.md`, READMEs (English and Spanish), architecture document and ADRs 001, 002 and 008.

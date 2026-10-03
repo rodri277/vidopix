@@ -1,4 +1,4 @@
-# ADR 003: Toolchain version constraints
+# ADR 008: Toolchain version constraints
 
 - Status: Accepted
 - Phase: 0

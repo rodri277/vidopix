@@ -52,5 +52,5 @@ Before closing any task: `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm e
 
 ## Toolchain notes
 
-- TypeScript is pinned to 6.0.x and ESLint to 9.39.x until `typescript-eslint` and `eslint-plugin-jsx-a11y` support the newer majors (ADR 003).
+- TypeScript is pinned to 6.0.x and ESLint to 9.39.x until `typescript-eslint` and `eslint-plugin-jsx-a11y` support the newer majors (ADR 008).
 - Vite inlining of assets is disabled so the strict CSP (`vercel.json` and `apps/web/vite.config.ts`, kept in sync) holds.
