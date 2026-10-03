@@ -4,6 +4,12 @@ import { createSprite, type InvalidSizeError, type Layer, type Sprite } from '..
 import { PixelPatchCommand } from '../history/command.js';
 import { DEFAULT_HISTORY_BUDGET_BYTES, HistoryManager } from '../history/history-manager.js';
 import type { PixelPatch } from '../history/pixel-patch.js';
+import {
+  exportSprite,
+  type ExportError,
+  type ExportImage,
+  type ExportOptions,
+} from '../io/export.js';
 import type { IdGenerator } from '../ports/id-generator.js';
 import type { Result } from '../result.js';
 import { EyedropperTool } from '../tools/eyedropper-tool.js';
@@ -171,6 +177,11 @@ export class EditorSession {
     this.events.emit('spriteReplaced', { sprite: this.currentSprite });
     this.emitHistory('clear', null);
     return result;
+  }
+
+  /** Flattens the document into pixels at a whole-number scale, ready to be encoded as PNG. */
+  exportImage(options: ExportOptions): Result<ExportImage, ExportError> {
+    return exportSprite(this.currentSprite, options);
   }
 
   // ---- Tools and colors ----

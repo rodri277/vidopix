@@ -25,3 +25,13 @@ export { EditorSession } from './session/editor-session.js';
 export type { HistoryCause, SessionConfig, SessionEvents } from './session/editor-session.js';
 export { DEFAULT_TOOL_OPTIONS, MAX_BRUSH_SIZE, MIN_BRUSH_SIZE, TOOL_IDS } from './tools/tool.js';
 export type { ColorSlot, PointerInput, Preview, ToolId, ToolOptions } from './tools/tool.js';
+export { colorToOklch, linearToSrgb, oklchToColor, srgbToLinear } from './domain/oklch.js';
+export type { Oklch } from './domain/oklch.js';
+export {
+  MAX_EXPORT_DIMENSION,
+  MAX_EXPORT_SCALE,
+  MIN_EXPORT_SCALE,
+  compositeSprite,
+  exportSprite,
+} from './io/export.js';
+export type { ExportError, ExportImage, ExportOptions } from './io/export.js';

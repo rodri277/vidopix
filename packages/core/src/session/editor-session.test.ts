@@ -551,6 +551,25 @@ describe('newSprite', () => {
   });
 });
 
+describe('exportImage', () => {
+  it('exports what was drawn, scaled', () => {
+    const session = createSession(4, 4);
+    session.setColor('primary', RED);
+    drag(session, [[1, 2]]);
+    const result = session.exportImage({ scale: 2 });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value.width).toBe(8);
+    expect(result.value.pixels[4 * 8 + 2]).toBe(RED);
+    expect(result.value.pixels[5 * 8 + 3]).toBe(RED);
+    expect(result.value.pixels[0]).toBe(0);
+  });
+
+  it('reports invalid scales', () => {
+    expect(createSession().exportImage({ scale: 0 }).ok).toBe(false);
+  });
+});
+
 describe('history budget', () => {
   it('drops the oldest steps when the memory budget is exceeded', () => {
     const session = createSession(64, 64, 100);
