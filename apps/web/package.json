@@ -1,13 +1,13 @@
 {
   "name": "@vidopix/web",
-  "version": "1.2.2",
+  "version": "1.2.3",
   "private": true,
   "type": "module",
   "description": "Vidopix web app: React UI and browser adapters around @vidopix/core.",
   "license": "MIT",
   "scripts": {
     "dev": "vite",
-    "build": "tsc --noEmit && vite build",
+    "build": "tsc --noEmit && vite build && node ../../tools/third-party-licenses.mjs --check",
     "preview": "vite preview --port 4173 --strictPort",
     "typecheck": "tsc --noEmit",
     "e2e": "playwright test",

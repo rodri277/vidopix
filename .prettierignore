@@ -6,3 +6,4 @@ test-results
 pnpm-lock.yaml
 SPEC.md
 tools/fixtures
+THIRD_PARTY_LICENSES.md

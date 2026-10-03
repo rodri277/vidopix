@@ -1,5 +1,6 @@
+import { readFileSync } from 'node:fs';
 import react from '@vitejs/plugin-react';
-import { defineConfig } from 'vite';
+import { defineConfig, type Plugin } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
 // Keep in sync with the Content-Security-Policy header in the root vercel.json.
@@ -17,9 +18,27 @@ const contentSecurityPolicy = [
   "frame-ancestors 'none'",
 ].join('; ');
 
+// The licenses of the packages the app redistributes, and the privacy note, published with it.
+// tools/third-party-licenses.mjs checks after the build that the notices match what was shipped.
+const notices: Plugin = {
+  name: 'vidopix-notices',
+  apply: 'build',
+  generateBundle() {
+    const published = {
+      'third-party-licenses.txt': 'THIRD_PARTY_LICENSES.md',
+      'privacy.txt': 'PRIVACY.md',
+    };
+    for (const [fileName, source] of Object.entries(published)) {
+      const text = readFileSync(new URL(`../../${source}`, import.meta.url), 'utf8');
+      this.emitFile({ type: 'asset', fileName, source: text });
+    }
+  },
+};
+
 export default defineConfig({
   plugins: [
     react(),
+    notices,
     VitePWA({
       // The page asks before updating, so a new version never reloads the editor mid-drawing.
       registerType: 'prompt',
