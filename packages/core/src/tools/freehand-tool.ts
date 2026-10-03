@@ -23,7 +23,7 @@ export class FreehandTool implements Tool {
   pointerDown(context: ToolContext, input: PointerInput): void {
     const color = this.id === 'eraser' ? 0 : context.colorFor(input.button);
     this.stroke = {
-      recorder: new PatchRecorder(context.buffer),
+      recorder: new PatchRecorder(context.buffer, context.selection),
       color,
       lastX: input.x,
       lastY: input.y,

@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { packRgba, unpackRgba } from './color.js';
-import { blendPixel, compositePixel, compositeRegion, compositeSprite } from './compositing.js';
+import {
+  blendPixel,
+  compositePixel,
+  compositeRegion,
+  compositeSprite,
+  scaleAlpha,
+} from './compositing.js';
 import { PixelBuffer } from './pixel-buffer.js';
 import type { Layer, Sprite } from './sprite.js';
 
@@ -155,5 +161,19 @@ describe('blendPixel', () => {
     expect(a).toBe(255);
     expect(r).toBeGreaterThan(100);
     expect(b).toBeGreaterThan(100);
+  });
+});
+
+describe('scaleAlpha', () => {
+  it('multiplies only the alpha channel', () => {
+    expect(unpackRgba(scaleAlpha(packRgba(10, 20, 30, 200), 0.5))).toEqual({
+      r: 10,
+      g: 20,
+      b: 30,
+      a: 100,
+    });
+    expect(scaleAlpha(RED, 1)).toBe(RED);
+    expect(scaleAlpha(RED, 0) >>> 24).toBe(0);
+    expect(scaleAlpha(RED, -1) >>> 24).toBe(0);
   });
 });

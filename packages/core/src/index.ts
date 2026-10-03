@@ -53,3 +53,7 @@ export {
   compositeSprite,
 } from './domain/compositing.js';
 export { intersectRects, rectContains, rectFromCorners, rectsEqual } from './domain/rect.js';
+export { DocumentEditor } from './document/document-editor.js';
+export type { BlockReason, DocumentEvents, Floating } from './document/document-editor.js';
+export { MAX_LAYERS } from './document/layer-ops.js';
+export { scaleAlpha } from './domain/compositing.js';

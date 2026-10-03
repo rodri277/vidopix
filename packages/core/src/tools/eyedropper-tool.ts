@@ -24,6 +24,6 @@ export class EyedropperTool implements Tool {
 
   private pick(context: ToolContext, input: PointerInput): void {
     if (!context.buffer.contains(input.x, input.y)) return;
-    context.setColor(input.button, context.buffer.get(input.x, input.y));
+    context.setColor(input.button, context.sampleColor(input.x, input.y));
   }
 }

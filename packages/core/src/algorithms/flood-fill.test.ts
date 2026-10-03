@@ -106,6 +106,31 @@ describe('colorsWithinTolerance', () => {
   });
 });
 
+describe('floodFillSpans with bounds', () => {
+  const bounds = { x: 2, y: 1, width: 3, height: 2 };
+  const collect = (mode: FillMode): Set<string> => {
+    const buffer = PixelBuffer.create(8, 6);
+    const filled = new Set<string>();
+    floodFillSpans(buffer, 3, 1, { mode, tolerance: 0, bounds }, (y, x0, x1) => {
+      for (let x = x0; x <= x1; x++) filled.add(`${String(x)},${String(y)}`);
+    });
+    return filled;
+  };
+
+  it('never leaves the bounds, contiguous or global', () => {
+    const expected = new Set(['2,1', '3,1', '4,1', '2,2', '3,2', '4,2']);
+    expect(collect('contiguous')).toEqual(expected);
+    expect(collect('global')).toEqual(expected);
+  });
+
+  it('does nothing when the start is outside the bounds', () => {
+    const buffer = PixelBuffer.create(8, 6);
+    let calls = 0;
+    floodFillSpans(buffer, 0, 0, { mode: 'contiguous', tolerance: 0, bounds }, () => calls++);
+    expect(calls).toBe(0);
+  });
+});
+
 describe('floodFillSpans', () => {
   it('matches a naive breadth-first fill on random grids (contiguous)', () => {
     fc.assert(

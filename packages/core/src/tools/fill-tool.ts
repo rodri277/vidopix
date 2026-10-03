@@ -8,11 +8,17 @@ export class FillTool implements Tool {
 
   pointerDown(context: ToolContext, input: PointerInput): void {
     const color = context.colorFor(input.button);
-    const recorder = new PatchRecorder(context.buffer);
+    const recorder = new PatchRecorder(context.buffer, context.selection);
     const { fillMode, tolerance } = context.options;
-    floodFillSpans(context.buffer, input.x, input.y, { mode: fillMode, tolerance }, (y, x0, x1) => {
-      for (let x = x0; x <= x1; x++) recorder.setPixel(x, y, color);
-    });
+    floodFillSpans(
+      context.buffer,
+      input.x,
+      input.y,
+      { mode: fillMode, tolerance, bounds: context.selection },
+      (y, x0, x1) => {
+        for (let x = x0; x <= x1; x++) recorder.setPixel(x, y, color);
+      },
+    );
     context.markDirty(recorder.takeDirty());
     context.commit('Fill', recorder.finish());
   }

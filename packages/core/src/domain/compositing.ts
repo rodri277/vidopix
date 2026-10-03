@@ -92,3 +92,10 @@ export function blendPixel(source: Color, backdrop: Color): Color {
     Math.round((sc * a1 + dc * a2 * (1 - a1)) / outAlpha);
   return packRgba(mix(s.r, d.r), mix(s.g, d.g), mix(s.b, d.b), Math.round(outAlpha * 255));
 }
+
+/** The same color with its alpha multiplied by `opacity` (0 to 1). */
+export function scaleAlpha(color: Color, opacity: number): Color {
+  if (opacity >= 1) return color;
+  const alpha = Math.round((color >>> 24) * Math.max(0, opacity));
+  return ((alpha << 24) | (color & 0xffffff)) >>> 0;
+}
