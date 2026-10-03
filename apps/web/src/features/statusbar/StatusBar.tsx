@@ -8,6 +8,8 @@ const TOOL_LABELS = {
   line: 'Line',
   rectangle: 'Rectangle',
   ellipse: 'Ellipse',
+  select: 'Select',
+  move: 'Move',
 } as const;
 
 export function StatusBar() {
@@ -17,6 +19,8 @@ export function StatusBar() {
   const height = useEditorState((state) => state.spriteHeight);
   const zoom = useEditorState((state) => state.viewport.zoom);
   const tool = useEditorState((state) => state.tool);
+  const selection = useEditorState((state) => state.selection);
+  const notice = useEditorState((state) => state.notice);
   const position = keyboardCursor ?? cursor;
 
   return (
@@ -31,7 +35,10 @@ export function StatusBar() {
       </span>
       <span>{String(zoom * 100)}%</span>
       <span>{TOOL_LABELS[tool]}</span>
-      <span>Not saved</span>
+      <span>
+        {selection ? `Selection ${String(selection.width)}×${String(selection.height)}` : ''}
+      </span>
+      <span>{notice === '' ? 'Not saved' : notice}</span>
       <span>by vidotho</span>
     </>
   );

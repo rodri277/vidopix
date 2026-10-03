@@ -4,10 +4,12 @@ import {
   Circle,
   Eraser,
   Minus,
+  Move,
   Pencil,
   PaintBucket,
   Pipette,
   Square,
+  SquareDashed,
   type LucideIcon,
 } from 'lucide-react';
 import { useRef, type KeyboardEvent } from 'react';
@@ -31,6 +33,8 @@ const TOOLS: readonly ToolEntry[] = [
   { id: 'line', label: 'Line', key: 'L', icon: Minus },
   { id: 'rectangle', label: 'Rectangle', key: 'U', icon: Square },
   { id: 'ellipse', label: 'Ellipse', key: 'O', icon: Circle },
+  { id: 'select', label: 'Select', key: 'M', icon: SquareDashed },
+  { id: 'move', label: 'Move', key: 'V', icon: Move },
 ];
 
 export function Toolbar() {

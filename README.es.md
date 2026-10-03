@@ -4,7 +4,7 @@
 
 Un editor de pixel art que funciona en el navegador: sin instalar nada, sin cuenta y con un generador de paletas integrado.
 
-> **Estado:** Fase 1 (editor base, v0.1.0). Las capas, las selecciones y las paletas llegan en las siguientes fases. El enlace a la demo y las capturas se añadirán cuando la app esté desplegada.
+> **Estado:** Fase 2 (capas y selección, v0.2.0). Las paletas y la animación llegan en las siguientes fases. El enlace a la demo y las capturas se añadirán cuando la app esté desplegada.
 
 ## Objetivos
 
@@ -18,6 +18,8 @@ Un editor de pixel art que funciona en el navegador: sin instalar nada, sin cuen
 - Zoom entero de 1× a 64× anclado al puntero, desplazamiento, cuadrícula de píxeles y damero de transparencia.
 - Colores primario y secundario con hex y deslizadores OKLCH.
 - Deshacer y rehacer que nunca se quedan sin pasos, solo sin presupuesto de memoria (64 MB por defecto).
+- Capas (añadir, duplicar, borrar, renombrar, reordenar, ocultar, bloquear, opacidad, fusionar hacia abajo, aplanar), todas con deshacer.
+- Selección rectangular, mover, copiar, cortar, pegar y borrar; todas las herramientas respetan la selección.
 - Exportación a PNG de 1× a 32×.
 - Se puede usar entera con teclado: las flechas mueven un cursor de píxel y mantener Enter dibuja.
 

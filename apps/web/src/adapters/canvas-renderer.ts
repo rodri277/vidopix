@@ -27,6 +27,8 @@ export interface CursorShape {
 }
 
 const GRID_MIN_SCALE = 8;
+const ANTS_INTERVAL_MS = 120;
+const ANTS_DASH = 4;
 const CHECKER_CELL_CSS_PX = 8;
 
 function context2d(canvas: HTMLCanvasElement | OffscreenCanvas): CanvasRenderingContext2D {
@@ -67,6 +69,11 @@ export class CanvasRenderer {
   private gridVisible = true;
   private cursor: CursorShape | null = null;
 
+  private readonly floatingCanvas = document.createElement('canvas');
+  private floatingSource: PixelBuffer | null = null;
+  private antsOffset = 0;
+  private antsTimer: ReturnType<typeof setInterval> | undefined;
+
   private frame = 0;
   private pendingDocument: Rect | null = null;
   private fullDocument = true;
@@ -97,6 +104,16 @@ export class CanvasRenderer {
       }),
       session.on('previewChanged', ({ preview }) => {
         this.setPreview(preview);
+      }),
+      session.on('selectionChanged', ({ selection }) => {
+        this.overlayDirty = true;
+        this.updateAnts(selection !== null);
+        this.schedule();
+      }),
+      session.on('floatingChanged', ({ floating }) => {
+        this.syncFloating(floating?.pixels ?? null);
+        this.overlayDirty = true;
+        this.schedule();
       }),
     );
   }
@@ -161,6 +178,7 @@ export class CanvasRenderer {
   }
 
   dispose(): void {
+    clearInterval(this.antsTimer);
     cancelAnimationFrame(this.frame);
     this.frame = 0;
     for (const off of this.unsubscribe) off();
@@ -168,6 +186,31 @@ export class CanvasRenderer {
   }
 
   // ---- Internals ----
+
+  /** Animates the selection outline, unless the user prefers reduced motion. */
+  private updateAnts(active: boolean): void {
+    clearInterval(this.antsTimer);
+    this.antsTimer = undefined;
+    if (!active || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    this.antsTimer = setInterval(() => {
+      this.antsOffset = (this.antsOffset + 1) % (ANTS_DASH * 2);
+      this.overlayDirty = true;
+      this.schedule();
+    }, ANTS_INTERVAL_MS);
+  }
+
+  private syncFloating(pixels: PixelBuffer | null): void {
+    if (pixels === this.floatingSource) return;
+    this.floatingSource = pixels;
+    if (!pixels) return;
+    this.floatingCanvas.width = pixels.width;
+    this.floatingCanvas.height = pixels.height;
+    context2d(this.floatingCanvas).putImageData(
+      new ImageData(new Uint8ClampedArray(pixels.data.buffer), pixels.width, pixels.height),
+      0,
+      0,
+    );
+  }
 
   private resetSource(): void {
     const { width, height } = this.session.sprite;
@@ -391,6 +434,9 @@ export class CanvasRenderer {
       }
     }
 
+    this.drawFloating(context, scale);
+    this.drawSelection(context, scale);
+
     const cursor = this.cursor;
     if (cursor) {
       const offset = Math.floor((cursor.size - 1) / 2);
@@ -405,5 +451,48 @@ export class CanvasRenderer {
         context.strokeRect(x - 0.5, y - 0.5, side + 1, side + 1);
       }
     }
+  }
+
+  private drawFloating(context: CanvasRenderingContext2D, scale: number): void {
+    const floating = this.session.document.floating;
+    if (!floating) return;
+    this.syncFloating(floating.pixels);
+    const visible = this.visibleRect();
+    const x0 = Math.max(floating.x, visible.x);
+    const y0 = Math.max(floating.y, visible.y);
+    const x1 = Math.min(floating.x + floating.pixels.width, visible.x + visible.width);
+    const y1 = Math.min(floating.y + floating.pixels.height, visible.y + visible.height);
+    if (x1 <= x0 || y1 <= y0) return;
+    context.imageSmoothingEnabled = false;
+    context.drawImage(
+      this.floatingCanvas,
+      x0 - floating.x,
+      y0 - floating.y,
+      x1 - x0,
+      y1 - y0,
+      this.panX + x0 * scale,
+      this.panY + y0 * scale,
+      (x1 - x0) * scale,
+      (y1 - y0) * scale,
+    );
+  }
+
+  /** The selection outline: a dark line under dashes that crawl along it. */
+  private drawSelection(context: CanvasRenderingContext2D, scale: number): void {
+    const selection = this.session.document.selection;
+    if (!selection) return;
+    const x = this.panX + selection.x * scale + 0.5;
+    const y = this.panY + selection.y * scale + 0.5;
+    const width = selection.width * scale - 1;
+    const height = selection.height * scale - 1;
+    context.lineWidth = 1;
+    context.setLineDash([]);
+    context.strokeStyle = '#000';
+    context.strokeRect(x, y, width, height);
+    context.setLineDash([ANTS_DASH, ANTS_DASH]);
+    context.lineDashOffset = -this.antsOffset;
+    context.strokeStyle = '#fff';
+    context.strokeRect(x, y, width, height);
+    context.setLineDash([]);
   }
 }

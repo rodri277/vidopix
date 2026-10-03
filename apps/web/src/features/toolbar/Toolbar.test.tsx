@@ -26,11 +26,11 @@ describe('Toolbar', () => {
     await userEvent.keyboard('{ArrowDown}');
     expect(screen.getByRole('button', { name: 'Eraser' })).toHaveFocus();
     await userEvent.keyboard('{End}');
-    expect(screen.getByRole('button', { name: 'Ellipse' })).toHaveFocus();
+    expect(screen.getByRole('button', { name: 'Move' })).toHaveFocus();
     await userEvent.keyboard('{ArrowDown}');
     expect(pencil).toHaveFocus();
     await userEvent.keyboard('{ArrowUp}');
-    expect(screen.getByRole('button', { name: 'Ellipse' })).toHaveFocus();
+    expect(screen.getByRole('button', { name: 'Move' })).toHaveFocus();
     await userEvent.keyboard('{Home}');
     expect(pencil).toHaveFocus();
   });

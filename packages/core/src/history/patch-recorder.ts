@@ -1,6 +1,6 @@
 import type { Color } from '../domain/color.js';
 import type { PixelBuffer } from '../domain/pixel-buffer.js';
-import type { Rect } from '../domain/rect.js';
+import { rectContains, type Rect } from '../domain/rect.js';
 import { createPatch, type PixelPatch } from './pixel-patch.js';
 
 const INITIAL_CAPACITY = 256;
@@ -22,13 +22,18 @@ export class PatchRecorder {
   private dirtyMaxX = -1;
   private dirtyMaxY = -1;
 
-  constructor(private readonly buffer: PixelBuffer) {
+  /** `clip` limits where pixels may change (the active selection); null means the whole buffer. */
+  constructor(
+    private readonly buffer: PixelBuffer,
+    private readonly clip: Rect | null = null,
+  ) {
     this.seen = new Uint8Array(buffer.width * buffer.height);
   }
 
   setPixel(x: number, y: number, color: Color): void {
     const { width, height, data } = this.buffer;
     if (x < 0 || y < 0 || x >= width || y >= height) return;
+    if (this.clip && !rectContains(this.clip, x, y)) return;
     const index = y * width + x;
     const current = data[index] ?? 0;
     if (current === color) return;

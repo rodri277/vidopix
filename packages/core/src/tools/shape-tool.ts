@@ -1,5 +1,6 @@
 import { traceLine } from '../algorithms/line.js';
 import { traceEllipse, traceRect } from '../algorithms/shapes.js';
+import { rectContains } from '../domain/rect.js';
 import { PatchRecorder } from '../history/patch-recorder.js';
 import { stampBrush } from './brush.js';
 import { constrainLine, constrainSquare, type Point } from './constrain.js';
@@ -42,7 +43,7 @@ export class ShapeTool implements Tool {
     this.drag = null;
     context.setPreview(null);
 
-    const recorder = new PatchRecorder(context.buffer);
+    const recorder = new PatchRecorder(context.buffer, context.selection);
     this.trace(context, drag, (x, y) => {
       recorder.setPixel(x, y, drag.color);
     });
@@ -63,9 +64,12 @@ export class ShapeTool implements Tool {
 
   private showPreview(context: ToolContext, drag: Drag): void {
     const { width } = context.buffer;
+    const { selection } = context;
     const pixels: number[] = [];
     this.trace(context, drag, (x, y) => {
-      if (context.buffer.contains(x, y)) pixels.push(y * width + x);
+      if (context.buffer.contains(x, y) && (!selection || rectContains(selection, x, y))) {
+        pixels.push(y * width + x);
+      }
     });
     context.setPreview({ pixels, color: drag.color });
   }

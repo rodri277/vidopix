@@ -2,6 +2,24 @@
 
 All notable changes to this project are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses [Semantic Versioning](https://semver.org/).
 
+## [0.2.0] - 2026-10-03
+
+### Added
+
+- Layers: add, delete, duplicate, rename, reorder (drag and drop, Alt with arrow keys, or buttons), show and hide, lock, opacity, merge down and flatten. Every operation can be undone (ADR 010).
+- Rectangular selection (M) with select all, deselect and Shift for a square. Pencil, eraser, fill and shapes only change pixels inside the selection.
+- Move tool (V): drag the selected pixels, or the whole layer when nothing is selected; content stays floating until dropped with Enter, and Escape puts it back. A whole move is one undo step (ADR 011).
+- Copy, cut, paste and delete. Copy and cut also write a PNG to the system clipboard, and paste reads an image from it when the browser allows.
+- Layers panel with accessible controls, a marching-ants selection outline (still when reduced motion is requested), and messages when an action is refused (locked or hidden layer, nothing selected).
+- The eyedropper now picks the visible color from all layers and works on locked layers.
+- Composition recalculates only the dirty rectangle (`compositeRegion`) and a benchmark for eight layers.
+- ADRs 010 and 011, E2E tests for layers and selection, and a frame-rate probe with eight layers.
+
+### Changed
+
+- Flood fill accepts bounds, so it never leaves the selection.
+- The Dependabot configuration ignores major bumps of `@types/node`, `typescript`, `eslint` and `@eslint/js`, which are held back on purpose (ADR 008).
+
 ## [0.1.0] - 2026-10-03
 
 ### Added

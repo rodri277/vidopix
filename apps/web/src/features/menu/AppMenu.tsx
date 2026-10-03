@@ -10,6 +10,11 @@ export function AppMenu() {
   const canRedo = useEditorState((state) => state.canRedo);
   const showGrid = useEditorState((state) => state.showGrid);
   const panelsHidden = useEditorState((state) => state.panelsHidden);
+  const hasSelection = useEditorState((state) => state.selection !== null);
+  const layerCount = useEditorState((state) => state.layers.length);
+  const activeIndex = useEditorState((state) =>
+    state.layers.findIndex((layer) => layer.id === state.activeLayerId),
+  );
 
   const menus = useMemo<readonly MenuDefinition[]>(() => {
     const actions = store.getState();
@@ -53,11 +58,117 @@ export function AppMenu() {
             },
           },
           {
+            label: 'Cut',
+            shortcut: shortcutLabel('X'),
+            separatorBefore: true,
+            disabled: !hasSelection,
+            onSelect: () => {
+              actions.cut();
+            },
+          },
+          {
+            label: 'Copy',
+            shortcut: shortcutLabel('C'),
+            disabled: !hasSelection,
+            onSelect: () => {
+              actions.copy();
+            },
+          },
+          {
+            label: 'Paste',
+            shortcut: shortcutLabel('V'),
+            onSelect: () => {
+              void actions.paste();
+            },
+          },
+          {
+            label: 'Delete',
+            shortcut: 'Del',
+            disabled: !hasSelection,
+            onSelect: () => {
+              actions.deleteSelection();
+            },
+          },
+          {
+            label: 'Select all',
+            shortcut: shortcutLabel('A'),
+            separatorBefore: true,
+            onSelect: () => {
+              actions.selectAll();
+            },
+          },
+          {
+            label: 'Deselect',
+            shortcut: shortcutLabel('D'),
+            disabled: !hasSelection,
+            onSelect: () => {
+              actions.deselect();
+            },
+          },
+          {
             label: 'Swap colors',
             shortcut: 'X',
             separatorBefore: true,
             onSelect: () => {
               actions.swapColors();
+            },
+          },
+        ],
+      },
+      {
+        label: 'Layer',
+        items: [
+          {
+            label: 'New layer',
+            shortcut: shortcutLabel('Shift+N'),
+            onSelect: () => {
+              actions.addLayer();
+            },
+          },
+          {
+            label: 'Duplicate layer',
+            shortcut: shortcutLabel('J'),
+            onSelect: () => {
+              actions.duplicateLayer();
+            },
+          },
+          {
+            label: 'Delete layer',
+            disabled: layerCount <= 1,
+            onSelect: () => {
+              actions.deleteLayer();
+            },
+          },
+          {
+            label: 'Merge down',
+            separatorBefore: true,
+            disabled: activeIndex <= 0,
+            onSelect: () => {
+              actions.mergeDown();
+            },
+          },
+          {
+            label: 'Flatten image',
+            disabled: layerCount <= 1,
+            onSelect: () => {
+              actions.flatten();
+            },
+          },
+          {
+            label: 'Move layer up',
+            shortcut: shortcutLabel(']'),
+            separatorBefore: true,
+            disabled: activeIndex >= layerCount - 1,
+            onSelect: () => {
+              actions.shiftActiveLayer(1);
+            },
+          },
+          {
+            label: 'Move layer down',
+            shortcut: shortcutLabel('['),
+            disabled: activeIndex <= 0,
+            onSelect: () => {
+              actions.shiftActiveLayer(-1);
             },
           },
         ],
@@ -111,7 +222,7 @@ export function AppMenu() {
         ],
       },
     ];
-  }, [store, canUndo, canRedo, showGrid, panelsHidden]);
+  }, [store, canUndo, canRedo, showGrid, panelsHidden, hasSelection, layerCount, activeIndex]);
 
   return (
     <>

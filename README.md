@@ -4,7 +4,7 @@
 
 A pixel art editor that runs in your browser: no install, no account, and a built-in palette generator.
 
-> **Status:** Phase 1 (base editor, v0.1.0). Layers, selections and palettes come in the next phases. The live demo link and screenshots are added once the app is deployed.
+> **Status:** Phase 2 (layers and selection, v0.2.0). Palettes and animation come in the next phases. The live demo link and screenshots are added once the app is deployed.
 
 ## Goals
 
@@ -18,6 +18,8 @@ A pixel art editor that runs in your browser: no install, no account, and a buil
 - Integer zoom from 1x to 64x anchored on the pointer, panning, pixel grid, transparency checkerboard.
 - Primary and secondary colors with hex and OKLCH sliders.
 - Undo and redo that never run out of steps, only out of a memory budget (64 MB by default).
+- Layers (add, duplicate, delete, rename, reorder, hide, lock, opacity, merge down, flatten), all undoable.
+- Rectangular selection, move, copy, cut, paste and delete; every tool respects the selection.
 - PNG export at 1x to 32x.
 - Fully usable from the keyboard: arrow keys move a pixel cursor, hold Enter to draw.
 

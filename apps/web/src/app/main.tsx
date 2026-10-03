@@ -3,6 +3,7 @@ import '@fontsource-variable/jetbrains-mono';
 import { EditorSession } from '@vidopix/core';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
+import { browserClipboard } from '../adapters/system-clipboard';
 import { randomIdGenerator } from '../adapters/id-generator';
 import '../design-system/tokens.css';
 import '../design-system/global.css';
@@ -24,7 +25,7 @@ if (!created.ok) {
   throw new Error('Could not create the initial sprite');
 }
 const session = created.value;
-const store = createEditorStore(session);
+const store = createEditorStore(session, browserClipboard);
 
 createRoot(container).render(
   <StrictMode>

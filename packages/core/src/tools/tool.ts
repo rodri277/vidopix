@@ -1,10 +1,20 @@
 import type { Color } from '../domain/color.js';
 import type { PixelBuffer } from '../domain/pixel-buffer.js';
+import type { DocumentEditor } from '../document/document-editor.js';
 import type { Rect } from '../domain/rect.js';
 import type { FillMode } from '../algorithms/flood-fill.js';
 import type { PixelPatch } from '../history/pixel-patch.js';
 
-export type ToolId = 'pencil' | 'eraser' | 'fill' | 'eyedropper' | 'line' | 'rectangle' | 'ellipse';
+export type ToolId =
+  | 'pencil'
+  | 'eraser'
+  | 'fill'
+  | 'eyedropper'
+  | 'line'
+  | 'rectangle'
+  | 'ellipse'
+  | 'select'
+  | 'move';
 
 export const TOOL_IDS: readonly ToolId[] = [
   'pencil',
@@ -14,6 +24,8 @@ export const TOOL_IDS: readonly ToolId[] = [
   'line',
   'rectangle',
   'ellipse',
+  'select',
+  'move',
 ];
 
 export const MIN_BRUSH_SIZE = 1;
@@ -57,10 +69,17 @@ export interface Preview {
 
 /** What a tool may see and do. Provided by the session. */
 export interface ToolContext {
+  /** Pixels of the active layer. */
   readonly buffer: PixelBuffer;
   readonly options: ToolOptions;
+  /** Active selection: drawing tools only change pixels inside it. Null means no limit. */
+  readonly selection: Rect | null;
+  /** For tools that work on the document itself (selecting and moving). */
+  readonly editor: DocumentEditor;
   colorFor(slot: ColorSlot): Color;
   setColor(slot: ColorSlot, color: Color): void;
+  /** The visible color at a point, with every layer composited. */
+  sampleColor(x: number, y: number): Color;
   /** Adds a finished edit to the history. Pass null if nothing changed. */
   commit(label: string, patch: PixelPatch | null): void;
   /** Tells the renderer that this area of the document changed. */

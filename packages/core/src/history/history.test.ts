@@ -73,6 +73,19 @@ describe('PatchRecorder', () => {
   });
 });
 
+describe('PatchRecorder clip', () => {
+  it('only changes pixels inside the clip rectangle', () => {
+    const buffer = PixelBuffer.create(6, 6);
+    const recorder = new PatchRecorder(buffer, { x: 1, y: 1, width: 2, height: 2 });
+    for (let y = 0; y < 6; y++) for (let x = 0; x < 6; x++) recorder.setPixel(x, y, RED);
+    const painted = [...buffer.data].filter((value) => value !== 0).length;
+    expect(painted).toBe(4);
+    expect(buffer.get(1, 1)).toBe(RED);
+    expect(buffer.get(0, 0)).toBe(0);
+    expect(recorder.finish()?.bounds).toEqual({ x: 1, y: 1, width: 2, height: 2 });
+  });
+});
+
 describe('HistoryManager', () => {
   it('undoes and redoes a recorded stroke', () => {
     const buffer = PixelBuffer.create(4, 4);

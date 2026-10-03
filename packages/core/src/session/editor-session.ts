@@ -1,8 +1,9 @@
+import { DocumentEditor, type DocumentEvents } from '../document/document-editor.js';
 import type { Color } from '../domain/color.js';
+import type { PixelBuffer } from '../domain/pixel-buffer.js';
 import type { Rect } from '../domain/rect.js';
 import { createSprite, type InvalidSizeError, type Layer, type Sprite } from '../domain/sprite.js';
-import { PixelPatchCommand } from '../history/command.js';
-import { DEFAULT_HISTORY_BUDGET_BYTES, HistoryManager } from '../history/history-manager.js';
+import { DEFAULT_HISTORY_BUDGET_BYTES } from '../history/history-manager.js';
 import type { PixelPatch } from '../history/pixel-patch.js';
 import {
   exportSprite,
@@ -15,6 +16,8 @@ import type { Result } from '../result.js';
 import { EyedropperTool } from '../tools/eyedropper-tool.js';
 import { FillTool } from '../tools/fill-tool.js';
 import { FreehandTool } from '../tools/freehand-tool.js';
+import { MoveTool } from '../tools/move-tool.js';
+import { SelectTool } from '../tools/select-tool.js';
 import { ShapeTool } from '../tools/shape-tool.js';
 import {
   DEFAULT_TOOL_OPTIONS,
@@ -30,27 +33,16 @@ import {
 } from '../tools/tool.js';
 import { Emitter } from './emitter.js';
 
-export type HistoryCause = 'record' | 'undo' | 'redo' | 'clear';
+export type { HistoryCause } from '../document/document-editor.js';
 
-export interface SessionEvents {
-  /** An area of the active document changed and needs to be redrawn. */
-  documentChanged: { dirty: Rect };
-  /** The whole document was replaced (new sprite). */
-  spriteReplaced: { sprite: Sprite };
-  historyChanged: {
-    canUndo: boolean;
-    canRedo: boolean;
-    undoLabel: string | null;
-    redoLabel: string | null;
-    cause: HistoryCause;
-    /** Label of the command that was recorded, undone or redone. */
-    label: string | null;
-  };
+interface ToolEvents {
   toolChanged: { tool: ToolId };
   colorsChanged: { primary: Color; secondary: Color };
   optionsChanged: { options: ToolOptions };
   previewChanged: { preview: Preview | null };
 }
+
+export type SessionEvents = DocumentEvents & ToolEvents;
 
 export interface SessionConfig {
   readonly ids: IdGenerator;
@@ -60,16 +52,41 @@ export interface SessionConfig {
 const OPAQUE_BLACK: Color = 0xff000000;
 const OPAQUE_WHITE: Color = 0xffffffff;
 
+/** Tools that change pixels, so they need a visible, unlocked layer. */
+const EDITING_TOOLS: ReadonlySet<ToolId> = new Set([
+  'pencil',
+  'eraser',
+  'fill',
+  'line',
+  'rectangle',
+  'ellipse',
+  'move',
+]);
+
+const DOCUMENT_EVENTS: ReadonlySet<string> = new Set([
+  'documentChanged',
+  'layersChanged',
+  'selectionChanged',
+  'floatingChanged',
+  'spriteReplaced',
+  'historyChanged',
+  'actionBlocked',
+]);
+
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, Math.round(value)));
 }
 
 /**
- * The only door between the UI and the editing engine. Owns the document, the tools and the
- * history; the UI sends pointer input and commands, and listens to events to know what to redraw.
+ * The only door between the UI and the editing engine. Owns the tools and their settings and wraps
+ * the document; the UI sends pointer input and commands, and listens to events to know what to
+ * redraw. Everything about layers, selection, clipboard and history is on `document`.
  */
 export class EditorSession {
-  private readonly events = new Emitter<SessionEvents>();
+  /** Layers, selection, floating content, clipboard and history. */
+  readonly document: DocumentEditor;
+
+  private readonly events = new Emitter<ToolEvents>();
   private readonly tools: Readonly<Record<ToolId, Tool>> = {
     pencil: new FreehandTool('pencil', 'Pencil'),
     eraser: new FreehandTool('eraser', 'Eraser'),
@@ -78,10 +95,10 @@ export class EditorSession {
     line: new ShapeTool('line', 'Line'),
     rectangle: new ShapeTool('rectangle', 'Rectangle'),
     ellipse: new ShapeTool('ellipse', 'Ellipse'),
+    select: new SelectTool(),
+    move: new MoveTool(),
   };
 
-  private history: HistoryManager;
-  private currentSprite: Sprite;
   private currentTool: ToolId = 'pencil';
   private primary: Color = OPAQUE_BLACK;
   private secondary: Color = OPAQUE_WHITE;
@@ -94,8 +111,11 @@ export class EditorSession {
     sprite: Sprite,
     private readonly config: SessionConfig,
   ) {
-    this.currentSprite = sprite;
-    this.history = new HistoryManager(config.historyBudgetBytes ?? DEFAULT_HISTORY_BUDGET_BYTES);
+    this.document = new DocumentEditor(
+      sprite,
+      config.ids,
+      config.historyBudgetBytes ?? DEFAULT_HISTORY_BUDGET_BYTES,
+    );
     this.context = this.createContext();
   }
 
@@ -111,13 +131,11 @@ export class EditorSession {
   // ---- State ----
 
   get sprite(): Sprite {
-    return this.currentSprite;
+    return this.document.sprite;
   }
 
   get activeLayer(): Layer {
-    const layer = this.currentSprite.layers[0];
-    if (!layer) throw new Error('A sprite always has at least one layer');
-    return layer;
+    return this.document.activeLayer;
   }
 
   get activeTool(): ToolId {
@@ -141,22 +159,31 @@ export class EditorSession {
   }
 
   get canUndo(): boolean {
-    return this.history.canUndo;
+    return this.document.canUndo;
   }
 
   get canRedo(): boolean {
-    return this.history.canRedo;
+    return this.document.canRedo;
   }
 
   get historyBytes(): number {
-    return this.history.usedBytes;
+    return this.document.historyBytes;
   }
 
   on<K extends keyof SessionEvents>(
     event: K,
     listener: (payload: SessionEvents[K]) => void,
   ): () => void {
-    return this.events.on(event, listener);
+    if (DOCUMENT_EVENTS.has(event)) {
+      return this.document.events.on(
+        event as keyof DocumentEvents,
+        listener as (payload: DocumentEvents[keyof DocumentEvents]) => void,
+      );
+    }
+    return this.events.on(
+      event as keyof ToolEvents,
+      listener as (payload: ToolEvents[keyof ToolEvents]) => void,
+    );
   }
 
   // ---- Document ----
@@ -170,18 +197,30 @@ export class EditorSession {
     const result = createSprite(options, this.config.ids);
     if (!result.ok) return result;
     this.cancelStroke();
-    this.currentSprite = result.value;
-    this.history = new HistoryManager(
-      this.config.historyBudgetBytes ?? DEFAULT_HISTORY_BUDGET_BYTES,
-    );
-    this.events.emit('spriteReplaced', { sprite: this.currentSprite });
-    this.emitHistory('clear', null);
+    this.document.replaceSprite(result.value);
     return result;
   }
 
   /** Flattens the document into pixels at a whole-number scale, ready to be encoded as PNG. */
   exportImage(options: ExportOptions): Result<ExportImage, ExportError> {
-    return exportSprite(this.currentSprite, options);
+    this.document.commitFloating();
+    return exportSprite(this.document.sprite, options);
+  }
+
+  /** Pastes pixels from outside the app as floating content and switches to the Move tool. */
+  pasteBuffer(pixels: PixelBuffer, center: { x: number; y: number }): boolean {
+    this.cancelStroke();
+    const pasted = this.document.pasteBuffer(pixels, center);
+    if (pasted) this.selectTool('move');
+    return pasted;
+  }
+
+  /** Pastes the app's own clipboard as floating content and switches to the Move tool. */
+  paste(center: { x: number; y: number }): boolean {
+    this.cancelStroke();
+    const pasted = this.document.paste(center);
+    if (pasted) this.selectTool('move');
+    return pasted;
   }
 
   // ---- Tools and colors ----
@@ -189,8 +228,8 @@ export class EditorSession {
   setActiveTool(tool: ToolId): void {
     if (tool === this.currentTool) return;
     this.cancelStroke();
-    this.currentTool = tool;
-    this.events.emit('toolChanged', { tool });
+    if (tool !== 'move') this.document.commitFloating();
+    this.selectTool(tool);
   }
 
   setColor(slot: ColorSlot, color: Color): void {
@@ -222,8 +261,17 @@ export class EditorSession {
   // ---- Pointer input ----
 
   pointerDown(input: PointerInput): void {
-    const layer = this.activeLayer;
-    if (this.stroking || layer.locked || !layer.visible) return;
+    if (this.stroking) return;
+    if (EDITING_TOOLS.has(this.currentTool)) {
+      const layer = this.document.activeLayer;
+      if (layer.locked || !layer.visible) {
+        this.document.events.emit('actionBlocked', {
+          reason: layer.locked ? 'layer-locked' : 'layer-hidden',
+        });
+        return;
+      }
+    }
+    if (this.currentTool !== 'move') this.document.commitFloating();
     this.stroking = true;
     this.tools[this.currentTool].pointerDown(this.context, input);
   }
@@ -246,38 +294,30 @@ export class EditorSession {
     this.tools[this.currentTool].cancel(this.context);
   }
 
+  /** Escape: cancels the stroke in progress, or else drops floating content without applying it. */
+  cancelAction(): void {
+    if (this.stroking) this.cancelStroke();
+    else this.document.cancelFloating();
+  }
+
   // ---- History ----
 
   undo(): void {
     this.cancelStroke();
-    const step = this.history.undo();
-    if (!step) return;
-    this.afterHistoryStep('undo', step.label, step.dirty);
+    this.document.undo();
   }
 
   redo(): void {
     this.cancelStroke();
-    const step = this.history.redo();
-    if (!step) return;
-    this.afterHistoryStep('redo', step.label, step.dirty);
+    this.document.redo();
   }
 
   // ---- Internals ----
 
-  private afterHistoryStep(cause: 'undo' | 'redo', label: string, dirty: Rect | null): void {
-    if (dirty) this.events.emit('documentChanged', { dirty });
-    this.emitHistory(cause, label);
-  }
-
-  private emitHistory(cause: HistoryCause, label: string | null): void {
-    this.events.emit('historyChanged', {
-      canUndo: this.history.canUndo,
-      canRedo: this.history.canRedo,
-      undoLabel: this.history.undoLabel,
-      redoLabel: this.history.redoLabel,
-      cause,
-      label,
-    });
+  private selectTool(tool: ToolId): void {
+    if (tool === this.currentTool) return;
+    this.currentTool = tool;
+    this.events.emit('toolChanged', { tool });
   }
 
   private emitColors(): void {
@@ -289,22 +329,25 @@ export class EditorSession {
     const session = this;
     return {
       get buffer() {
-        return session.activeLayer.buffer;
+        return session.document.activeLayer.buffer;
       },
       get options() {
         return session.currentOptions;
       },
+      get selection() {
+        return session.document.selection;
+      },
+      editor: session.document,
       colorFor: (slot) => (slot === 'primary' ? session.primary : session.secondary),
       setColor: (slot, color) => {
         session.setColor(slot, color);
       },
+      sampleColor: (x, y) => session.document.sampleColor(x, y),
       commit: (label: string, patch: PixelPatch | null) => {
-        if (!patch) return;
-        session.history.record(new PixelPatchCommand(label, session.activeLayer.buffer, patch));
-        session.emitHistory('record', label);
+        session.document.commitPixels(label, patch);
       },
-      markDirty: (rect) => {
-        if (rect) session.events.emit('documentChanged', { dirty: rect });
+      markDirty: (rect: Rect | null) => {
+        session.document.markDirty(rect);
       },
       setPreview: (preview) => {
         session.currentPreview = preview;

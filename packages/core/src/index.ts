@@ -31,8 +31,6 @@ export {
   MAX_EXPORT_DIMENSION,
   MAX_EXPORT_SCALE,
   MIN_EXPORT_SCALE,
-  compositeRegion,
-  compositeSprite,
   exportSprite,
 } from './io/export.js';
 export type { ExportError, ExportImage, ExportOptions } from './io/export.js';
@@ -48,3 +46,14 @@ export {
   zoomAt,
 } from './viewport/viewport.js';
 export type { Viewport } from './viewport/viewport.js';
+export {
+  blendPixel,
+  compositePixel,
+  compositeRegion,
+  compositeSprite,
+} from './domain/compositing.js';
+export { intersectRects, rectContains, rectFromCorners, rectsEqual } from './domain/rect.js';
+export { DocumentEditor } from './document/document-editor.js';
+export type { BlockReason, DocumentEvents, Floating } from './document/document-editor.js';
+export { MAX_LAYERS } from './document/layer-ops.js';
+export { scaleAlpha } from './domain/compositing.js';
