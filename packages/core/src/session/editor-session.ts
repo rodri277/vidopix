@@ -68,6 +68,7 @@ const DOCUMENT_EVENTS: ReadonlySet<string> = new Set([
   'layersChanged',
   'selectionChanged',
   'paletteChanged',
+  'nameChanged',
   'floatingChanged',
   'spriteReplaced',
   'historyChanged',
@@ -200,6 +201,12 @@ export class EditorSession {
     this.cancelStroke();
     this.document.replaceSprite(result.value);
     return result;
+  }
+
+  /** Replaces the document with an existing sprite, for example one opened from a file. */
+  openSprite(sprite: Sprite): void {
+    this.cancelStroke();
+    this.document.replaceSprite(sprite);
   }
 
   /** Flattens the document into pixels at a whole-number scale, ready to be encoded as PNG. */

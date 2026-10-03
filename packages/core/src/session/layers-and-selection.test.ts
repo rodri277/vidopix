@@ -425,3 +425,22 @@ describe('long sessions with layers', () => {
     expect(session.sprite.layers.map((layer) => [...layer.buffer.data])).toEqual(final);
   });
 });
+
+describe('openSprite', () => {
+  it('replaces the document with the given sprite and clears history', () => {
+    const session = createSession(8);
+    drag(session, [[1, 1]]);
+    const other = createSession(4).sprite;
+    session.openSprite(other);
+    expect(session.sprite).toBe(other);
+    expect(session.canUndo).toBe(false);
+  });
+
+  it('abandons a stroke in progress', () => {
+    const session = createSession(8);
+    session.pointerDown(at(1, 1));
+    session.openSprite(createSession(4).sprite);
+    session.pointerMove(at(2, 2));
+    expect(painted(session)).toEqual([]);
+  });
+});

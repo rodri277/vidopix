@@ -2,7 +2,7 @@ import { blendPixel, compositePixel, compositeSprite, scaleAlpha } from '../doma
 import type { Color } from '../domain/color.js';
 import { PixelBuffer } from '../domain/pixel-buffer.js';
 import { intersectRects, rectContains, rectsEqual, unionRects, type Rect } from '../domain/rect.js';
-import type { Palette, PaletteColor } from '../domain/palette.js';
+import { cleanName, type Palette, type PaletteColor } from '../domain/palette.js';
 import type { Layer, Sprite } from '../domain/sprite.js';
 import { PixelPatchCommand, type Command } from '../history/command.js';
 import { DEFAULT_HISTORY_BUDGET_BYTES, HistoryManager } from '../history/history-manager.js';
@@ -33,6 +33,9 @@ import {
   setLayerProps,
 } from './layer-ops.js';
 
+/** Longest sprite name. */
+export const MAX_SPRITE_NAME_LENGTH = 60;
+
 export type HistoryCause = 'record' | 'undo' | 'redo' | 'clear';
 
 export type BlockReason =
@@ -58,6 +61,7 @@ export interface DocumentEvents {
   layersChanged: { sprite: Sprite; activeLayerId: string };
   selectionChanged: { selection: Rect | null };
   paletteChanged: { palette: Palette };
+  nameChanged: { name: string };
   floatingChanged: { floating: Floating | null };
   /** The whole document was replaced (new sprite). */
   spriteReplaced: { sprite: Sprite };
@@ -179,6 +183,7 @@ export class DocumentEditor {
     this.emitLayers();
     this.events.emit('selectionChanged', { selection: null });
     this.events.emit('paletteChanged', { palette: sprite.palette });
+    this.events.emit('nameChanged', { name: sprite.name });
     this.events.emit('floatingChanged', { floating: null });
     this.emitHistory('clear', null);
   }
@@ -343,6 +348,21 @@ export class DocumentEditor {
         activeLayerId: merged.id,
       }),
       bufferBytes(sprite) * (sprite.layers.length + 1),
+    );
+  }
+
+  // ---- Sprite name ----
+
+  renameSprite(name: string): void {
+    this.structural(
+      'Rename sprite',
+      (state) => {
+        const cleaned = cleanName(name, MAX_SPRITE_NAME_LENGTH);
+        if (cleaned === undefined || cleaned === state.sprite.name) return state;
+        return { ...state, sprite: { ...state.sprite, name: cleaned } };
+      },
+      0,
+      false,
     );
   }
 
@@ -724,6 +744,9 @@ export class DocumentEditor {
       current.activeLayerId !== previous.activeLayerId
     ) {
       this.emitLayers();
+    }
+    if (current.sprite.name !== previous.sprite.name) {
+      this.events.emit('nameChanged', { name: current.sprite.name });
     }
     if (current.sprite.palette !== previous.sprite.palette) {
       this.events.emit('paletteChanged', { palette: current.sprite.palette });

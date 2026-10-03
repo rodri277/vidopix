@@ -711,6 +711,49 @@ describe('replaceColor', () => {
   });
 });
 
+describe('sprite name and opening sprites', () => {
+  it('renames the sprite as an undoable step and announces it', () => {
+    const editor = createEditor();
+    const names = record(editor, 'nameChanged');
+    editor.renameSprite('  Hero  ');
+    expect(editor.sprite.name).toBe('Hero');
+    expect(names).toEqual([{ name: 'Hero' }]);
+    editor.undo();
+    expect(editor.sprite.name).toBe('Untitled');
+    expect(names.at(-1)).toEqual({ name: 'Untitled' });
+    editor.redo();
+    expect(editor.sprite.name).toBe('Hero');
+  });
+
+  it('ignores empty or unchanged names and shortens long ones', () => {
+    const editor = createEditor();
+    editor.renameSprite('   ');
+    editor.renameSprite('Untitled');
+    expect(editor.canUndo).toBe(false);
+    editor.renameSprite('x'.repeat(100));
+    expect(editor.sprite.name).toHaveLength(60);
+  });
+
+  it('does not redraw the canvas for a rename', () => {
+    const editor = createEditor();
+    const dirty = record(editor, 'documentChanged');
+    editor.renameSprite('Hero');
+    expect(dirty).toHaveLength(0);
+  });
+
+  it('announces the name of a replacement sprite', () => {
+    const editor = createEditor();
+    const names = record(editor, 'nameChanged');
+    const fresh = createSprite(
+      { width: 2, height: 2, name: 'Other' },
+      createSequentialIdGenerator('n'),
+    );
+    if (!fresh.ok) throw new Error('sprite');
+    editor.replaceSprite(fresh.value);
+    expect(names).toEqual([{ name: 'Other' }]);
+  });
+});
+
 describe('document lifecycle', () => {
   it('replacing the sprite resets layers, selection, floating content and history', () => {
     const editor = createEditor();
