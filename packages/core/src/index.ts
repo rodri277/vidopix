@@ -93,3 +93,5 @@ export {
   parsePaletteFile,
 } from './io/palette-formats.js';
 export type { PaletteFile, PaletteFormat, PaletteParseError } from './io/palette-formats.js';
+export { PALETTE_PRESETS, presetToColors } from './data/palette-presets.js';
+export type { PalettePreset } from './data/palette-presets.js';
