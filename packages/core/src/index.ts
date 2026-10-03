@@ -75,3 +75,10 @@ export {
   wcagLevels,
 } from './domain/color-theory.js';
 export type { HarmonyKind, RampOptions, WcagLevels } from './domain/color-theory.js';
+export {
+  MAX_EXTRACT_COLORS,
+  MIN_EXTRACT_COLORS,
+  fitWithin,
+  medianCut,
+} from './algorithms/median-cut.js';
+export type { ProgressFn } from './algorithms/median-cut.js';

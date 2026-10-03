@@ -166,3 +166,17 @@ describe('setActiveLayer', () => {
     expect(setActiveLayer(two, two.activeLayerId)).toBe(two);
   });
 });
+
+describe('activeLayerOf', () => {
+  it('falls back to the first layer when the active id is stale', () => {
+    const { state } = setup();
+    const stale = { ...state, activeLayerId: 'gone' };
+    expect(activeLayerOf(stale)).toBe(state.sprite.layers[0]);
+  });
+
+  it('refuses a sprite without layers', () => {
+    const { state } = setup();
+    const empty = { ...state, sprite: { ...state.sprite, layers: [] } };
+    expect(() => activeLayerOf(empty)).toThrow('at least one layer');
+  });
+});
