@@ -6,7 +6,7 @@ Un editor de pixel art que funciona en el navegador: sin instalar nada, sin cuen
 
 ![Un guerrero descansando junto a una hoguera bajo un cielo estrellado, exportado desde Vidopix como GIF animado](docs/media/campfire.gif)
 
-> **Estado:** v1.2.2, todas las fases de [SPEC.md](SPEC.md) terminadas. La animación de arriba tiene cinco capas y doce fotogramas. `pnpm campfire` la construye, la abre en el editor como proyecto y la exporta con la exportación a GIF del propio editor. **[Pruébalo online](https://vidopix.vercel.app)** (ver [Despliegue](#despliegue)).
+> **Estado:** v1.2.3, todas las fases de [SPEC.md](SPEC.md) terminadas. La animación de arriba tiene cinco capas y doce fotogramas. `pnpm campfire` la construye, la abre en el editor como proyecto y la exporta con la exportación a GIF del propio editor. **[Pruébalo online](https://vidopix.vercel.app)** (ver [Despliegue](#despliegue)).
 
 ![El editor con una animación, su línea de tiempo y el papel cebolla](docs/media/animation.png)
 

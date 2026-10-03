@@ -6,7 +6,7 @@ A pixel art editor that runs in your browser: no install, no account, and a buil
 
 ![A warrior resting at a campfire under a starry sky, exported from Vidopix as an animated GIF](docs/media/campfire.gif)
 
-> **Status:** v1.2.2, all phases of [SPEC.md](SPEC.md) done. The animation above has five layers and twelve frames. `pnpm campfire` builds it, opens it in the editor as a project and exports it with the editor's own GIF export. **[Try it live](https://vidopix.vercel.app)** (see [Deploying](#deploying)).
+> **Status:** v1.2.3, all phases of [SPEC.md](SPEC.md) done. The animation above has five layers and twelve frames. `pnpm campfire` builds it, opens it in the editor as a project and exports it with the editor's own GIF export. **[Try it live](https://vidopix.vercel.app)** (see [Deploying](#deploying)).
 
 ![The editor with an animation, its timeline and onion skin](docs/media/animation.png)
 

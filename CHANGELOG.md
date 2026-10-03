@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses [Semantic Versioning](https://semver.org/).
 
+## [1.2.3] - 2026-10-03
+
+### Changed
+
+- The header animation is now a square icon: a 64×64 scene exported at 4× (256×256), so every art pixel is a whole number of screen pixels and it stays sharp when shown at 64 px. The warrior and the fire fill the frame with a 6 px safe margin, there is no lettering, the background is opaque with a thin frame to stand apart from dark cards, and the 12 frames last 160 ms each and loop without a jump.
+
 ## [1.2.2] - 2026-10-03
 
 ### Changed

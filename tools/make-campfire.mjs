@@ -1,4 +1,4 @@
-// Draws the animation of a warrior resting at a campfire and exports it as a GIF with the editor's
+// Draws the square icon animation of a warrior resting at a campfire (64x64, exported at 4x) and exports it as a GIF with the editor's
 // own GIF export. The picture is built here, layer by layer and frame by frame (sky, stars, fire
 // light, warrior, fire); the editor opens it as a project and does the exporting.
 // Usage: pnpm build && pnpm --filter @vidopix/web preview & pnpm campfire
@@ -8,7 +8,7 @@ import { join } from 'node:path';
 
 const OUT = new URL('../docs/media/', import.meta.url).pathname;
 mkdirSync(OUT, { recursive: true });
-const W = 96,
+const W = 64,
   H = 64,
   N = 12;
 const TAU = Math.PI * 2;
@@ -100,10 +100,10 @@ const P = {
   smoke: [hex('#323850'), hex('#4D5472'), hex('#737A98')],
 };
 const WARM = hex('#FF9A4A');
-const FX = 66,
-  FY = 53; // fire centre and base
-const LX = 66,
-  LY = 47; // light source
+const FX = 47,
+  FY = 50; // fire centre and base
+const LX = 47,
+  LY = 44; // light source
 
 // ---------- fire light ----------
 const Ii = (f) =>
@@ -111,7 +111,7 @@ const Ii = (f) =>
 const LEVELS = 4;
 function lit(c, x, y, I, strength = 0.7) {
   const d = Math.sqrt((x - LX) ** 2 + ((y - LY) * 1.45) ** 2);
-  const k = Math.pow(clamp(1 - d / 36, 0, 1), 1.5) * I;
+  const k = Math.pow(clamp(1 - d / 30, 0, 1), 1.5) * I;
   if (k <= 0) return c;
   const v = k * LEVELS * 1.1;
   let level = Math.floor(v);
@@ -125,44 +125,44 @@ const base = new Img();
 // sky
 for (let y = 0; y < 50; y++)
   for (let x = 0; x < W; x++) {
-    const p = (y / 46) * 7;
+    const p = (y / 42) * 7;
     let band = Math.floor(p);
     if (p - band > 0.86 && ((x + y) & 1) === 0) band += 1;
     base.set(x, y, P.sky[clamp(band, 0, 7)]);
   }
 // moon with a dithered glow
-const MX = 82,
-  MY = 10;
+const MX = 50,
+  MY = 14;
 for (let y = 0; y < 30; y++)
-  for (let x = 56; x < W; x++) {
+  for (let x = 30; x < W; x++) {
     const d = Math.hypot(x - MX, y - MY);
     const cur = base.get(x, y);
     const idx = P.sky.findIndex((c) => c === cur);
     if (idx < 0) continue;
-    if (d > 6.5 && d <= 9) base.set(x, y, P.sky[Math.min(7, idx + 2)]);
-    else if (d > 9 && d <= 12 && ((x + y) & 1) === 0) base.set(x, y, P.sky[Math.min(7, idx + 1)]);
+    if (d > 5 && d <= 7) base.set(x, y, P.sky[Math.min(7, idx + 2)]);
+    else if (d > 7 && d <= 9.5 && ((x + y) & 1) === 0) base.set(x, y, P.sky[Math.min(7, idx + 1)]);
   }
 for (let y = 0; y < 30; y++)
-  for (let x = 64; x < W; x++) {
+  for (let x = 36; x < W; x++) {
     const d = Math.hypot(x - MX, y - MY);
-    const d2 = Math.hypot(x - (MX + 3.6), y - (MY - 2.6));
-    if (d <= 7 && d2 > 6) base.set(x, y, d > 5.6 || y > MY + 3 ? P.moon2 : P.moon);
+    const d2 = Math.hypot(x - (MX + 2.6), y - (MY - 1.9));
+    if (d <= 5 && d2 > 4.2) base.set(x, y, d > 3.9 || y > MY + 2 ? P.moon2 : P.moon);
   }
 // stars (the twinkling ones go on their own layer)
 const stars = [];
-for (let i = 0; i < 70; i++) {
+for (let i = 0; i < 34; i++) {
   const x = Math.floor(rnd() * W),
-    y = Math.floor(rnd() * 34);
-  if (Math.hypot(x - MX, y - MY) < 16) continue;
+    y = Math.floor(rnd() * 30);
+  if (Math.hypot(x - MX, y - MY) < 11) continue;
   stars.push([x, y, rnd() < 0.25 ? 1 : 0]);
 }
 const twinkle = [
-  [3, 4],
-  [40, 24],
-  [58, 21],
-  [17, 28],
-  [90, 26],
-  [65, 5],
+  [9, 9],
+  [22, 5],
+  [33, 18],
+  [12, 26],
+  [58, 27],
+  [38, 6],
 ];
 for (const [x, y, k] of stars)
   if (!twinkle.some(([tx, ty]) => Math.abs(tx - x) < 3 && Math.abs(ty - y) < 3))
@@ -176,63 +176,11 @@ const ridge = (b, a, ph) => (x) =>
           0.3 * Math.sin(x * 0.17 + ph * 2.1) +
           0.2 * Math.sin(x * 0.31 + ph * 0.7)),
   );
-const farR = ridge(36, 9, 1.3),
-  nearR = ridge(42, 6, 4.1);
+const farR = ridge(33, 6, 1.3),
+  nearR = ridge(37, 4, 4.1);
 for (let x = 0; x < W; x++) {
-  for (let y = farR(x); y < 52; y++) base.set(x, y, y === farR(x) ? P.far[1] : P.far[0]);
-  for (let y = nearR(x); y < 52; y++) base.set(x, y, y === nearR(x) ? P.near[1] : P.near[0]);
-}
-// the name in the sky: gold lettering with a highlight, a shade and a dark outline
-{
-  const GLYPH = {
-    V: ['101', '101', '101', '101', '010'],
-    I: ['111', '010', '010', '010', '111'],
-    D: ['110', '101', '101', '101', '110'],
-    O: ['010', '101', '101', '101', '010'],
-    P: ['110', '101', '110', '100', '100'],
-    X: ['101', '101', '010', '101', '101'],
-  };
-  const X0 = 8,
-    Y0 = 8,
-    CELL = 2;
-  const filled = new Map();
-  [...'VIDOPIX'].forEach((ch, i) =>
-    GLYPH[ch].forEach((row, gy2) =>
-      [...row].forEach((cell, gx) => {
-        if (cell !== '1') return;
-        for (let dy = 0; dy < CELL; dy++)
-          for (let dx = 0; dx < CELL; dx++)
-            filled.set(`${X0 + i * 8 + gx * CELL + dx},${Y0 + gy2 * CELL + dy}`, [
-              X0 + i * 8 + gx * CELL + dx,
-              Y0 + gy2 * CELL + dy,
-            ]);
-      }),
-    ),
-  );
-  const HI = hex('#FBEFC0'),
-    MID = hex('#F0BE5C'),
-    LO = hex('#C46F2E'),
-    OUTLINE = hex('#140C2E'),
-    SH = hex('#0B0720');
-  for (const [x, y] of filled.values()) {
-    const r = y - Y0; // 0..9
-    let c = r < 3 ? HI : r < 7 ? MID : LO;
-    if ((r === 3 || r === 7) && (x + y) & 1) c = r === 3 ? HI : MID;
-    base.set(x, y, c);
-  }
-  const edge = [];
-  for (const [x, y] of filled.values())
-    for (let dy = -1; dy <= 1; dy++)
-      for (let dx = -1; dx <= 1; dx++) {
-        const k = `${x + dx},${y + dy}`;
-        if (!filled.has(k)) edge.push([x + dx, y + dy]);
-      }
-  for (const [x, y] of edge) base.set(x, y, OUTLINE);
-  for (const [x, y] of filled.values()) {
-    const k = `${x + 1},${y + 2}`;
-    if (!filled.has(k) && !edge.some(([ex, ey]) => ex === x + 1 && ey === y + 2))
-      base.set(x + 1, y + 2, SH);
-  }
+  for (let y = farR(x); y < 48; y++) base.set(x, y, y === farR(x) ? P.far[1] : P.far[0]);
+  for (let y = nearR(x); y < 48; y++) base.set(x, y, y === nearR(x) ? P.near[1] : P.near[0]);
 }
 // distant pines along the horizon
 const pine = (img, cx, baseY, h, w, cols) => {
@@ -249,16 +197,14 @@ const pine = (img, cx, baseY, h, w, cols) => {
   img.rect(cx - 1, baseY + 1, cx, baseY + 3, cols[0]);
 };
 for (const [x, h] of [
-  [26, 9],
-  [31, 12],
-  [56, 9],
-  [74, 10],
-  [79, 8],
-  [84, 12],
+  [5, 7],
+  [10, 9],
+  [28, 6],
+  [58, 8],
 ])
-  pine(base, x, 49, h, Math.round(h / 3.3), P.mid);
+  pine(base, x, 45, h, Math.round(h / 3.3), [P.mid[0], P.mid[1], P.mid[1]]);
 // ground
-const gy = (x) => 43 + Math.round(1.6 * Math.sin(x * 0.06 + 0.5)) - (x < 18 ? 2 : 0);
+const gy = (x) => 41 + Math.round(1.2 * Math.sin(x * 0.08 + 0.5));
 for (let x = 0; x < W; x++)
   for (let y = gy(x); y < H; y++) {
     const t = (y - gy(x)) / (H - gy(x));
@@ -267,7 +213,7 @@ for (let x = 0; x < W; x++)
   }
 for (let i = 0; i < 90; i++) {
   const x = Math.floor(rnd() * W),
-    y = 50 + Math.floor(rnd() * 13);
+    y = 46 + Math.floor(rnd() * 17);
   if (base.get(x, y)) base.set(x, y, P.ground[rnd() < 0.5 ? 3 : 0]);
 }
 for (let x = 0; x < W; x += 1)
@@ -276,13 +222,7 @@ for (let x = 0; x < W; x += 1)
     base.set(x, y - 1, P.ground[2]);
   }
 // foreground pines (left and right)
-const fg = [
-  [-1, 63, 54, 10],
-  [5, 63, 40, 8],
-  [93, 63, 50, 10],
-  [87, 63, 36, 8],
-  [98, 63, 56, 10],
-];
+const fg = [];
 for (const [cx, by, h, w] of fg) pine(base, cx, by, h, w, P.tree);
 
 // stones around the fire
@@ -295,12 +235,13 @@ for (const [dx, dy, r] of [
   [12, 0, 1.5],
   [-12, -1, 1.2],
 ]) {
-  base.disc(FX + dx, FY + dy + 1, r, P.stone[1]);
-  base.set(FX + dx - 1, FY + dy, P.stone[0]);
-  base.set(FX + dx + 1, FY + dy, P.stone[2]);
+  const sx = FX + Math.round(dx * 0.8);
+  base.disc(sx, FY + dy + 1, r, P.stone[1]);
+  base.set(sx - 1, FY + dy, P.stone[0]);
+  base.set(sx + 1, FY + dy, P.stone[2]);
 }
 // log the warrior sits on
-const L0 = { x0: 20, x1: 47, y0: 47, y1: 54 };
+const L0 = { x0: 7, x1: 31, y0: 44, y1: 50 };
 base.poly(
   [
     [L0.x0 + 1, L0.y0 + 1],
@@ -317,35 +258,14 @@ for (let x = L0.x0 + 5; x < L0.x1 - 3; x += 5) base.set(x, L0.y0 + 3, P.wood[0])
 base.disc(L0.x1 - 1, (L0.y0 + L0.y1) / 2, 2.6, P.wood[3]);
 base.disc(L0.x1 - 1, (L0.y0 + L0.y1) / 2, 1.2, P.wood[2]);
 base.set(L0.x1 - 1, (L0.y0 + L0.y1) / 2, P.wood[1]);
-// sword planted in the ground
-base.rect(17, 40, 17, 54, hex('#B8C4DA'));
-base.rect(18, 40, 18, 54, hex('#7F8CA8'));
-base.set(17, 55, hex('#7F8CA8'));
-base.rect(14, 39, 21, 39, hex('#B8892E'));
-base.set(14, 40, hex('#F0C75E'));
-base.set(21, 40, hex('#B8892E'));
-base.rect(17, 35, 18, 38, hex('#5A3A24'));
-base.disc(17.5, 34, 1.5, hex('#F0C75E'));
-// shield leaning on the log
-const SC = [11, 50];
-base.disc(SC[0], SC[1], 6.4, hex('#4B5570'));
-base.disc(SC[0], SC[1], 5.2, hex('#8A1F2B'));
-for (let y = -5; y <= 5; y++)
-  for (let x = -5; x <= 5; x++)
-    if (x * x + y * y <= 26 && x > 0 === y > 0 && x !== 0 && y !== 0)
-      base.set(SC[0] + x, SC[1] + y, hex('#5E1620'));
-base.rect(SC[0] - 5, SC[1], SC[0] + 5, SC[1], hex('#B8892E'));
-base.rect(SC[0], SC[1] - 5, SC[0], SC[1] + 5, hex('#B8892E'));
-base.disc(SC[0], SC[1], 1.8, hex('#F0C75E'));
-base.set(SC[0], SC[1], hex('#B8892E'));
-for (let a = 0; a < 16; a++)
-  base.set(
-    SC[0] + Math.round(Math.cos((a / 16) * TAU) * 6.4),
-    SC[1] + Math.round(Math.sin((a / 16) * TAU) * 6.4),
-    a < 4 || a > 11 ? hex('#7F8CA8') : hex('#2E3447'),
-  );
+// a thin frame, so the icon stands apart from a dark card behind it
+const FRAME = hex('#4C46A0');
+base.rect(0, 0, W - 1, 0, FRAME);
+base.rect(0, H - 1, W - 1, H - 1, FRAME);
+base.rect(0, 0, 0, H - 1, FRAME);
+base.rect(W - 1, 0, W - 1, H - 1, FRAME);
 // ---------- warrior ----------
-const WARRIOR = { ox: 22, oy: 26 }; // local (0,0)
+const WARRIOR = { ox: 6, oy: 20, k: 1.1 }; // local (0,0)
 const MAT = {
   A: [hex('#2A3044'), hex('#66738F'), hex('#AAB7D3')],
   C: [hex('#3E0F18'), hex('#6E1824'), hex('#A82A38')],
@@ -377,7 +297,7 @@ function buildWarrior(f) {
       z++;
       return disc.call(this, cx, cy, r, m);
     })(S.disc);
-  const L = (x, y) => [WARRIOR.ox + x, WARRIOR.oy + y];
+  const L = (x, y) => [WARRIOR.ox + x * WARRIOR.k, WARRIOR.oy + y * WARRIOR.k];
   const poly = (pts, c, dy = 0, dx = 0) =>
     S.poly(
       pts.map(([x, y]) => L(x + dx, y + dy)),
@@ -385,7 +305,7 @@ function buildWarrior(f) {
     );
   const disc = (x, y, r, c, dy = 0) => {
     const [px, py] = L(x, y + dy);
-    S.disc(px, py, r, c);
+    S.disc(px, py, r * WARRIOR.k, c);
   };
   // cape behind
   poly(
@@ -648,10 +568,10 @@ function shadeWarrior(S, f) {
       let c = ramp[1];
       if (!nl || !nb || !nt || behind(nl) || behind(nb) || behind(nt)) c = ramp[0];
       else if (!nr || behind(nr)) c = ramp[2];
-      else if (y - WARRIOR.oy > 19 && (x + y) & 1) c = ramp[0];
-      else if (x - WARRIOR.ox > 13 && bay(x, y) < 0.3) c = ramp[2];
+      else if (y - WARRIOR.oy > 19 * WARRIOR.k && (x + y) & 1) c = ramp[0];
+      else if (x - WARRIOR.ox > 13 * WARRIOR.k && bay(x, y) < 0.3) c = ramp[2];
       const rim = !nr || behind(nr);
-      const rel = clamp((x - WARRIOR.ox) / 24, 0, 1);
+      const rel = clamp((x - WARRIOR.ox) / (24 * WARRIOR.k), 0, 1);
       const m2 = (rim ? 0.5 : 0.1 + 0.22 * rel) * I * (m === 'E' ? 0 : 1);
       const q = Math.floor(m2 * 4 + 0.5) / 4;
       out.set(x, y, q > 0 ? mix(c, WARM, q * 0.9) : c);
@@ -666,8 +586,8 @@ function buildFire(f) {
   // smoke: soft puffs that rise, grow and thin out well below the moon
   for (let k = 0; k < 3; k++) {
     const ph = ((f + k * 4) % N) / N;
-    const cx = FX + 3 + ph * 9 + Math.sin(ph * TAU + k * 2) * 1.5,
-      cy = FY - 21 - ph * 15,
+    const cx = FX - 2 + ph * 5 + Math.sin(ph * TAU + k * 2) * 1.5,
+      cy = FY - 21 - ph * 10,
       r = 2 + ph * 3.6;
     for (let y = Math.floor(cy - r); y <= cy + r; y++)
       for (let x = Math.floor(cx - r); x <= cx + r; x++) {
@@ -706,25 +626,25 @@ function buildFire(f) {
   // logs in front of the flame
   img.poly(
     [
-      [FX - 11, FY + 2],
-      [FX - 9, FY - 2],
-      [FX + 7, FY + 1],
-      [FX + 6, FY + 4],
+      [FX - 9, FY + 2],
+      [FX - 7, FY - 2],
+      [FX + 6, FY + 1],
+      [FX + 5, FY + 4],
     ],
     P.wood[1],
   );
   img.poly(
     [
-      [FX + 12, FY + 2],
-      [FX + 10, FY - 2],
+      [FX + 9, FY + 2],
+      [FX + 7, FY - 2],
       [FX - 6, FY + 1],
       [FX - 5, FY + 4],
     ],
     P.wood[2],
   );
-  img.rect(FX - 9, FY, FX + 5, FY, P.wood[0]);
-  img.disc(FX - 11, FY + 1.5, 1.6, P.wood[3]);
-  img.disc(FX + 12, FY + 1.5, 1.6, P.wood[3]);
+  img.rect(FX - 7, FY, FX + 5, FY, P.wood[0]);
+  img.disc(FX - 9, FY + 1.5, 1.6, P.wood[3]);
+  img.disc(FX + 9, FY + 1.5, 1.6, P.wood[3]);
   // glowing coals
   for (let i = 0; i < 9; i++) {
     const x = FX - 8 + i * 2,
@@ -735,8 +655,9 @@ function buildFire(f) {
   for (let i = 0; i < 6; i++) {
     const ph = ((f + i * 5) % N) / N;
     if (ph > 0.88) continue;
-    const x = FX + Math.round((i % 2 ? 1 : -1) * (2 + ph * (6 + i)) + Math.sin(ph * 9 + i) * 1.4);
-    const y = FY - h * 0.55 - ph * 24;
+    const x =
+      FX + Math.round((i % 2 ? 1 : -1) * (2 + ph * (3 + i * 0.6)) + Math.sin(ph * 9 + i) * 1.4);
+    const y = FY - h * 0.55 - ph * 16;
     img.set(x, y, ph < 0.3 ? P.fire.pale : ph < 0.6 ? P.fire.ember : P.fire.red);
     if (ph < 0.25) img.set(x, y + 1, P.fire.orange);
   }
@@ -801,7 +722,7 @@ const project = JSON.stringify({
     width: W,
     height: H,
     palette: { id: 'palette', name: 'Campfire', colors: [] },
-    frames: Array.from({ length: N }, (_, i) => ({ id: `frame-${i}`, duration: 110 })),
+    frames: Array.from({ length: N }, (_, i) => ({ id: `frame-${i}`, duration: 160 })),
     layers: order.map((name, i) => ({
       id: `layer-${i}`,
       name,
@@ -852,7 +773,7 @@ await surface.focus();
 await page.keyboard.press('ControlOrMeta+e');
 const dialog = page.getByRole('dialog', { name: 'Export' });
 await dialog.getByLabel('Format').selectOption({ label: 'Animated GIF' });
-await dialog.getByLabel('Scale').fill('6');
+await dialog.getByLabel('Scale').fill('4');
 const download = page.waitForEvent('download');
 await dialog.getByRole('button', { name: 'Export' }).click();
 copyFileSync(await (await download).path(), join(OUT, 'campfire.gif'));
