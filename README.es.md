@@ -4,7 +4,7 @@
 
 Un editor de pixel art que funciona en el navegador: sin instalar nada, sin cuenta y con un generador de paletas integrado.
 
-> **Estado:** Fase 3 (paletas, v0.3.0). El uso sin conexión, compartir y la animación llegan en las siguientes fases. El enlace a la demo y las capturas se añadirán cuando la app esté desplegada.
+> **Estado:** v1.0.0. La animación está prevista para la siguiente fase. El enlace a la demo y las capturas se añadirán cuando la app esté desplegada.
 
 ## Objetivos
 
@@ -21,6 +21,10 @@ Un editor de pixel art que funciona en el navegador: sin instalar nada, sin cuen
 - Capas (añadir, duplicar, borrar, renombrar, reordenar, ocultar, bloquear, opacidad, fusionar hacia abajo, aplanar), todas con deshacer.
 - Selección rectangular, mover, copiar, cortar, pegar y borrar; todas las herramientas respetan la selección.
 - Una paleta por sprite con seis predefinidas, importación y exportación (`.gpl`, `.hex`, JSON), extracción desde cualquier imagen (median cut, en un worker), armonías OKLCH, rampas de sombreado con desplazamiento de tono, comprobador de contraste WCAG y reemplazo de color.
+- Simetría, trama ordenada, lápiz pixel-perfect, presión del lápiz y gestos táctiles (pellizcar para zoom, dos dedos para desplazar).
+- Se guarda solo en tu navegador (no se sube nada), proyectos recientes, archivos `.vidopix` y enlaces que llevan el sprite dentro de la URL.
+- Instalable y utilizable sin conexión.
+- Interfaz en inglés y español.
 - Exportación a PNG de 1× a 32×.
 - Se puede usar entera con teclado: las flechas mueven un cursor de píxel y mantener Enter dibuja.
 
@@ -36,7 +40,14 @@ Cifras de los benchmarks y del E2E de este repositorio, en la máquina del autor
 | 500 trazos deshechos y rehechos en 256×256      | dentro de 64 MB | pasa (test unitario)                  |
 | JavaScript inicial (gzip)                       | < 150 kB        | 88 kB                                 |
 
-Las puntuaciones de Lighthouse todavía no se han medido.
+Lighthouse se midió con `pnpm lighthouse` sobre el build de producción con el preset de escritorio. La página está pensada para pantallas de al menos 768 px de ancho, así que una prueba móvil de tamaño teléfono no es un objetivo.
+
+## Límites conocidos
+
+- La interfaz necesita al menos 768 px de ancho; los móviles no están soportados, las tablets sí.
+- Solo Chromium está cubierto por las pruebas automáticas. Safari y Firefox necesitan una revisión manual, sobre todo la instalación de la app, el portapapeles del sistema, los enlaces con `CompressionStream` y el táctil.
+- Un proyecto puede tener como máximo 1024×1024 píxeles, 64 capas y 20 MB. Un enlace admite unos 6000 caracteres: de sobra para pixel art de colores planos, insuficiente para sprites grandes o con mucho ruido.
+- Los detalles de los errores al leer archivos de paleta o de proyecto son técnicos y se quedan en inglés.
 
 ## Stack
 

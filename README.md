@@ -4,7 +4,7 @@
 
 A pixel art editor that runs in your browser: no install, no account, and a built-in palette generator.
 
-> **Status:** Phase 3 (palettes, v0.3.0). Offline use, sharing and animation come in the next phases. The live demo link and screenshots are added once the app is deployed.
+> **Status:** v1.0.0. Animation is planned for the next phase. The live demo link and screenshots are added once the app is deployed.
 
 ## Goals
 
@@ -21,6 +21,10 @@ A pixel art editor that runs in your browser: no install, no account, and a buil
 - Layers (add, duplicate, delete, rename, reorder, hide, lock, opacity, merge down, flatten), all undoable.
 - Rectangular selection, move, copy, cut, paste and delete; every tool respects the selection.
 - A palette per sprite with six presets, import and export (`.gpl`, `.hex`, JSON), extraction from any image (median cut, in a worker), OKLCH harmonies, hue-shifted shade ramps, a WCAG contrast checker and replace color.
+- Symmetry, ordered dithering, a pixel-perfect pencil, pen pressure, and touch gestures (pinch to zoom, two fingers to pan).
+- Saved automatically in your browser (nothing is uploaded), recent projects, `.vidopix` files and share links that carry the sprite inside the URL.
+- Installable and usable offline.
+- The interface in English and Spanish.
 - PNG export at 1x to 32x.
 - Fully usable from the keyboard: arrow keys move a pixel cursor, hold Enter to draw.
 
@@ -36,7 +40,14 @@ Numbers from this repository's own benchmarks and E2E run on the author's machin
 | 500 strokes undone and redone on 256×256       | within 64 MB | passes (unit test)           |
 | Initial JavaScript (gzip)                      | < 150 kB     | 88 kB                        |
 
-Lighthouse scores have not been measured yet.
+Lighthouse was measured with `pnpm lighthouse` on the production build with the desktop preset. The page is designed for screens at least 768 px wide, so a phone-sized mobile run is not a target.
+
+## Known limits
+
+- The layout needs at least 768 px of width; phones are not supported, tablets are.
+- Only Chromium is covered by the automated tests. Safari and Firefox need a manual check, especially for installing the app, the system clipboard, `CompressionStream` links and touch.
+- A project can be at most 1024×1024 pixels, 64 layers and 20 MB. A link can carry about 6000 characters, which is plenty for flat-color pixel art and not enough for large or noisy sprites.
+- Details of errors that come from reading palette or project files are technical and stay in English.
 
 ## Stack
 

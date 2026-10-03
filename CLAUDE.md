@@ -44,7 +44,7 @@ Before closing any task: `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm e
 
 ## Conventions
 
-- Code, names, comments and commits in English. UI in English (Spanish added in Phase 4).
+- Code, names, comments and commits in English. UI texts in English and Spanish: every text goes through `t()` and has a key in both `i18n/en.ts` and `i18n/es.ts` (a missing Spanish key is a compile error). Never write a user-visible string inline.
 - TDD in `packages/core`: write the test first, then the implementation. Coverage ≥ 90 % is enforced.
 - Strict TypeScript: no `any`, no `@ts-ignore`, no forgotten `console.log`, no `export default` (except tool config files).
 - Expected errors in the core (malformed files) are returned as `Result`; exceptions are for programmer errors.
@@ -60,6 +60,12 @@ Before closing any task: `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm e
 - One branch and one PR per phase: `phase/<n>-<name>`.
 - Hooks (Husky): lint-staged on commit, commitlint on commit message.
 - Close each phase with a version tag and a CHANGELOG entry.
+
+## Saving
+
+- `Persistence` owns saving. Anything that changes the document is saved because it ends in a `historyChanged` event; do not add other save paths.
+- Files are read and written only through `@vidopix/core/project-formats`; it is loaded on demand, so keep it (and Zod) out of the first bundle.
+- The service worker precaches everything: when adding a new kind of asset, check `pnpm build` output for the precache list and keep the `offline` E2E test passing.
 
 ## Toolchain notes
 
