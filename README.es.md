@@ -4,9 +4,9 @@
 
 Un editor de pixel art que funciona en el navegador: sin instalar nada, sin cuenta y con un generador de paletas integrado. De vidotho.
 
-![Un slime saltando bajo una luna creciente, dibujado en Vidopix y exportado con su propia exportación a GIF](docs/media/showcase.gif)
+![Un guerrero descansando junto a una hoguera bajo un cielo estrellado, exportado desde Vidopix como GIF animado](docs/media/campfire.gif)
 
-> **Estado:** v1.2.1, todas las fases de [SPEC.md](SPEC.md) terminadas. La animación de arriba se dibujó en el editor, con cuatro capas y ocho fotogramas, y se exportó con su propia exportación a GIF (`pnpm showcase` la vuelve a dibujar). **[Pruébalo online](https://vidopix.vercel.app)** (ver [Despliegue](#despliegue)).
+> **Estado:** v1.2.2, todas las fases de [SPEC.md](SPEC.md) terminadas. La animación de arriba tiene cinco capas y doce fotogramas. `pnpm campfire` la construye, la abre en el editor como proyecto y la exporta con la exportación a GIF del propio editor. **[Pruébalo online](https://vidopix.vercel.app)** (ver [Despliegue](#despliegue)).
 
 ![El editor con una animación, su línea de tiempo y el papel cebolla](docs/media/animation.png)
 
@@ -49,7 +49,7 @@ Un editor de pixel art que funciona en el navegador: sin instalar nada, sin cuen
 
 ![Exportando un GIF animado](docs/media/export.png)
 
-![La animación de cabecera abierta en el editor: cuatro capas y ocho fotogramas](docs/media/showcase-editor.png)
+![Un slime saltando bajo una luna creciente, dibujado clic a clic con las herramientas del editor (`pnpm showcase`)](docs/media/showcase.gif)
 
 ## Aspectos técnicos destacados
 
@@ -135,7 +135,8 @@ pnpm dev
 | `pnpm size`       | Presupuesto de tamaño del bundle                                           |
 | `pnpm lighthouse` | Lighthouse sobre el build de producción                                    |
 | `pnpm media`      | Regenera las capturas de este README                                       |
-| `pnpm showcase`   | Vuelve a dibujar la animación de cabecera en el editor y la exporta        |
+| `pnpm showcase`   | Dibuja la animación del slime con las herramientas del editor y la exporta |
+| `pnpm campfire`   | Construye la animación de cabecera, la abre en el editor y la exporta      |
 
 ## Despliegue
 

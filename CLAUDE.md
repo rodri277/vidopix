@@ -20,7 +20,9 @@ pnpm build            # production build of apps/web
 pnpm size             # bundle size budget (150 kB gzip)
 pnpm e2e              # Playwright + axe against the production build
 pnpm e2e:webkit       # the same tests on WebKit (Safari's engine); `pnpm exec playwright install webkit` once
-pnpm media            # regenerate README screenshots (needs `pnpm build` and a running `pnpm --filter @vidopix/web preview`)
+pnpm media            # regenerate README screenshots
+pnpm showcase         # redraw the slime animation with the editor's tools (same preview server)
+pnpm campfire         # rebuild the header animation and export it with the editor (same preview server) (needs `pnpm build` and a running `pnpm --filter @vidopix/web preview`)
 ```
 
 Before closing any task: `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm e2e` if the UI changed. All green.

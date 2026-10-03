@@ -244,8 +244,6 @@ const download = page.waitForEvent('download');
 await dialog.getByRole('button', { name: 'Export' }).click();
 copyFileSync(await (await download).path(), join(OUT, 'showcase.gif'));
 await dialog.waitFor({ state: 'hidden' });
-await page.keyboard.press('ControlOrMeta+d');
-await page.screenshot({ path: join(OUT, 'showcase-editor.png') });
 
 await browser.close();
 console.warn(`Wrote ${join(OUT, 'showcase.gif')}`);

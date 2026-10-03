@@ -1,6 +1,6 @@
 {
   "name": "@vidopix/web",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "private": true,
   "type": "module",
   "description": "Vidopix web app: React UI and browser adapters around @vidopix/core.",
