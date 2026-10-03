@@ -1,0 +1,83 @@
+.shell {
+  display: grid;
+  height: 100%;
+  grid-template-columns: var(--toolbar-width) 1fr var(--side-panel-width);
+  grid-template-rows: var(--topbar-height) var(--options-height) 1fr var(--statusbar-height);
+  grid-template-areas:
+    'top top top'
+    'options options options'
+    'tools canvas side'
+    'status status status';
+}
+
+.topbar,
+.options,
+.tools,
+.side,
+.status {
+  background: var(--bg-panel);
+}
+
+.topbar {
+  grid-area: top;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 0 var(--space-3);
+  border-bottom: 1px solid var(--border);
+}
+
+.logo {
+  width: 12px;
+  height: 12px;
+  background: var(--accent);
+}
+
+.title {
+  margin: 0;
+  font-size: var(--font-size-base);
+  font-weight: 600;
+}
+
+.options {
+  grid-area: options;
+  display: flex;
+  align-items: center;
+  padding: 0 var(--space-3);
+  border-bottom: 1px solid var(--border);
+}
+
+.tools {
+  grid-area: tools;
+  border-right: 1px solid var(--border);
+}
+
+.canvas {
+  grid-area: canvas;
+  display: grid;
+  place-items: center;
+  background: var(--bg-app);
+}
+
+.side {
+  grid-area: side;
+  border-left: 1px solid var(--border);
+  padding: var(--space-3);
+}
+
+.status {
+  grid-area: status;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--space-3);
+  border-top: 1px solid var(--border);
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.placeholder {
+  margin: 0;
+  color: var(--text-muted);
+}

@@ -1,0 +1,22 @@
+{
+  "name": "@vidopix/core",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "description": "Pure TypeScript editing engine for Vidopix. No DOM.",
+  "license": "MIT",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "test": "vitest run --coverage",
+    "test:watch": "vitest",
+    "bench": "vitest bench",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@vitest/coverage-v8": "^5.0.3",
+    "fast-check": "^4.10.2",
+    "vitest": "^5.0.3"
+  }
+}
