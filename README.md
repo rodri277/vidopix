@@ -6,7 +6,7 @@ A pixel art editor that runs in your browser: no install, no account, and a buil
 
 ![A slime hopping under a crescent moon, drawn in Vidopix and exported with its own GIF export](docs/media/showcase.gif)
 
-> **Status:** v1.1.2, all phases of [SPEC.md](SPEC.md) done. The animation above was drawn in the editor, with four layers and eight frames, and exported with its own GIF export (`pnpm showcase` redraws it). **[Try it live](https://vidopix.vercel.app)** (see [Deploying](#deploying)).
+> **Status:** v1.2.0, all phases of [SPEC.md](SPEC.md) done. The animation above was drawn in the editor, with four layers and eight frames, and exported with its own GIF export (`pnpm showcase` redraws it). **[Try it live](https://vidopix.vercel.app)** (see [Deploying](#deploying)).
 
 ![The editor with an animation, its timeline and onion skin](docs/media/animation.png)
 
@@ -14,7 +14,7 @@ A pixel art editor that runs in your browser: no install, no account, and a buil
 
 - A portfolio piece that shows architecture, algorithms, performance and product design.
 - Genuinely usable: an artist should be able to make a 64×64 sprite from start to finish and export it.
-- Fast to load and usable offline.
+- Fast to load and usable offline. The first visit asks what size of canvas to start with.
 
 ## What it does
 
@@ -45,7 +45,7 @@ A pixel art editor that runs in your browser: no install, no account, and a buil
 
 **Animation** (phase 5)
 
-- A timeline of frames with a duration each, looping playback, onion skin, and export as an animated GIF or as a spritesheet with a JSON file of coordinates. PNG export at 1× to 32×.
+- A timeline of frames (add them with the New frame button or the tile at the end of the strip) with a duration each, looping playback, onion skin, and export as an animated GIF or as a spritesheet with a JSON file of coordinates. PNG export at 1× to 32×.
 
 ![Exporting an animated GIF](docs/media/export.png)
 

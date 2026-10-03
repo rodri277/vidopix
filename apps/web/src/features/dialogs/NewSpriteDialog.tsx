@@ -4,7 +4,7 @@ import { Button } from '../../design-system/Button';
 import { Dialog } from '../../design-system/Dialog';
 import { TextField } from '../../design-system/Field';
 import { useT } from '../../i18n/useT';
-import { useEditor } from '../../state/editor-context';
+import { useEditor, useEditorState } from '../../state/editor-context';
 import styles from './NewSpriteDialog.module.css';
 
 const PRESETS = [16, 32, 64, 128, 256] as const;
@@ -14,6 +14,7 @@ export const DEFAULT_SPRITE_SIZE = 32;
 export function NewSpriteDialog() {
   const { session, store } = useEditor();
   const t = useT();
+  const welcome = useEditorState((state) => state.welcome);
   const [width, setWidth] = useState(String(DEFAULT_SPRITE_SIZE));
   const [height, setHeight] = useState(String(DEFAULT_SPRITE_SIZE));
   const [name, setName] = useState('');
@@ -105,7 +106,7 @@ export function NewSpriteDialog() {
           {error}
         </p>
       ) : (
-        <p className={styles.hint}>{t('newSprite.hint')}</p>
+        <p className={styles.hint}>{t(welcome ? 'newSprite.welcome' : 'newSprite.hint')}</p>
       )}
     </Dialog>
   );

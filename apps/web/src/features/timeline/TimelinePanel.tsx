@@ -197,13 +197,16 @@ export function TimelinePanel() {
           </label>
         </div>
         <div className={styles.group}>
-          <Action
-            label={t('timeline.new')}
-            icon={Plus}
+          <button
+            type="button"
+            className={styles.addButton}
             onClick={() => {
               actions.addFrame();
             }}
-          />
+          >
+            <Plus size={14} aria-hidden="true" />
+            {t('timeline.new')}
+          </button>
           <Action
             label={t('timeline.duplicate')}
             icon={Copy}
@@ -267,97 +270,109 @@ export function TimelinePanel() {
         </div>
       </div>
 
-      <ul ref={listRef} className={styles.strip} aria-label={t('timeline.frames')}>
-        {frames.map((frame, index) => {
-          const isActive = index === activeFrame;
-          const number = index + 1;
-          return (
-            // Dragging is a mouse shortcut; the same reordering is available from the keyboard
-            // (Alt+arrows) and from the move buttons, so the cell itself is not a control.
-            // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions
-            <li
-              key={frame.id}
-              className={styles.cell}
-              data-active={isActive}
-              data-playing={playing && index === playFrame}
-              data-drop={dropIndex === index}
-              draggable
-              onDragStart={(event) => {
-                dragged.current = index;
-                event.dataTransfer.effectAllowed = 'move';
-                event.dataTransfer.setData('text/plain', frame.id);
-              }}
-              onDragOver={(event) => {
-                if (dragged.current === null) return;
-                event.preventDefault();
-                setDropIndex(index);
-              }}
-              onDragLeave={() => {
-                setDropIndex((current) => (current === index ? null : current));
-              }}
-              onDrop={(event) => {
-                onDrop(event, index);
-              }}
-              onDragEnd={() => {
-                dragged.current = null;
-                setDropIndex(null);
-              }}
-            >
-              <button
-                type="button"
-                className={styles.frame}
-                data-frame={index}
-                aria-current={isActive ? 'true' : undefined}
-                aria-label={t('timeline.frameInfo', {
-                  number,
-                  total: frames.length,
-                  duration: frame.duration,
-                })}
-                aria-keyshortcuts="Alt+ArrowLeft Alt+ArrowRight"
-                tabIndex={isActive ? 0 : -1}
-                onClick={() => {
-                  actions.setActiveFrame(index);
+      <div className={styles.stripRow}>
+        <ul ref={listRef} className={styles.strip} aria-label={t('timeline.frames')}>
+          {frames.map((frame, index) => {
+            const isActive = index === activeFrame;
+            const number = index + 1;
+            return (
+              // Dragging is a mouse shortcut; the same reordering is available from the keyboard
+              // (Alt+arrows) and from the move buttons, so the cell itself is not a control.
+              // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions
+              <li
+                key={frame.id}
+                className={styles.cell}
+                data-active={isActive}
+                data-playing={playing && index === playFrame}
+                data-drop={dropIndex === index}
+                draggable
+                onDragStart={(event) => {
+                  dragged.current = index;
+                  event.dataTransfer.effectAllowed = 'move';
+                  event.dataTransfer.setData('text/plain', frame.id);
                 }}
-                onKeyDown={(event) => {
-                  onFrameKeyDown(event, index);
+                onDragOver={(event) => {
+                  if (dragged.current === null) return;
+                  event.preventDefault();
+                  setDropIndex(index);
+                }}
+                onDragLeave={() => {
+                  setDropIndex((current) => (current === index ? null : current));
+                }}
+                onDrop={(event) => {
+                  onDrop(event, index);
+                }}
+                onDragEnd={() => {
+                  dragged.current = null;
+                  setDropIndex(null);
                 }}
               >
-                <FrameThumb session={session} index={index} revision={revision + layers.length} />
-                <span aria-hidden="true">{number}</span>
-              </button>
-              <input
-                key={frame.duration}
-                className={styles.duration}
-                type="number"
-                min={20}
-                max={10000}
-                step={10}
-                defaultValue={frame.duration}
-                aria-label={t('timeline.duration', { number })}
-                onBlur={(event) => {
-                  commitNumber(
-                    event.currentTarget,
-                    (value) => {
-                      actions.setFrameDuration(index, value);
-                    },
-                    frame.duration,
-                  );
-                }}
-                onKeyDown={(event) => {
-                  if (event.key !== 'Enter') return;
-                  commitNumber(
-                    event.currentTarget,
-                    (value) => {
-                      actions.setFrameDuration(index, value);
-                    },
-                    frame.duration,
-                  );
-                }}
-              />
-            </li>
-          );
-        })}
-      </ul>
+                <button
+                  type="button"
+                  className={styles.frame}
+                  data-frame={index}
+                  aria-current={isActive ? 'true' : undefined}
+                  aria-label={t('timeline.frameInfo', {
+                    number,
+                    total: frames.length,
+                    duration: frame.duration,
+                  })}
+                  aria-keyshortcuts="Alt+ArrowLeft Alt+ArrowRight"
+                  tabIndex={isActive ? 0 : -1}
+                  onClick={() => {
+                    actions.setActiveFrame(index);
+                  }}
+                  onKeyDown={(event) => {
+                    onFrameKeyDown(event, index);
+                  }}
+                >
+                  <FrameThumb session={session} index={index} revision={revision + layers.length} />
+                  <span aria-hidden="true">{number}</span>
+                </button>
+                <input
+                  key={frame.duration}
+                  className={styles.duration}
+                  type="number"
+                  min={20}
+                  max={10000}
+                  step={10}
+                  defaultValue={frame.duration}
+                  aria-label={t('timeline.duration', { number })}
+                  onBlur={(event) => {
+                    commitNumber(
+                      event.currentTarget,
+                      (value) => {
+                        actions.setFrameDuration(index, value);
+                      },
+                      frame.duration,
+                    );
+                  }}
+                  onKeyDown={(event) => {
+                    if (event.key !== 'Enter') return;
+                    commitNumber(
+                      event.currentTarget,
+                      (value) => {
+                        actions.setFrameDuration(index, value);
+                      },
+                      frame.duration,
+                    );
+                  }}
+                />
+              </li>
+            );
+          })}
+        </ul>
+        <button
+          type="button"
+          className={styles.addTile}
+          onClick={() => {
+            actions.addFrame();
+          }}
+        >
+          <Plus size={20} aria-hidden="true" />
+          <span>{t('timeline.addTile')}</span>
+        </button>
+      </div>
     </div>
   );
 }

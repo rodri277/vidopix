@@ -2,6 +2,13 @@
 
 All notable changes to this project are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses [Semantic Versioning](https://semver.org/).
 
+## [1.2.0] - 2026-10-03
+
+### Added
+
+- A first visit asks what size of canvas to start with (presets or custom), once. Canceling starts with a small canvas; later visits pick up the last project as before.
+- Adding frames is easier to find: a labeled "New frame" button in the timeline, and an "Add frame" tile at the end of the strip.
+
 ## [1.1.2] - 2026-10-03
 
 ### Added

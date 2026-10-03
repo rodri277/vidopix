@@ -6,7 +6,7 @@ Un editor de pixel art que funciona en el navegador: sin instalar nada, sin cuen
 
 ![Un slime saltando bajo una luna creciente, dibujado en Vidopix y exportado con su propia exportación a GIF](docs/media/showcase.gif)
 
-> **Estado:** v1.1.2, todas las fases de [SPEC.md](SPEC.md) terminadas. La animación de arriba se dibujó en el editor, con cuatro capas y ocho fotogramas, y se exportó con su propia exportación a GIF (`pnpm showcase` la vuelve a dibujar). **[Pruébalo online](https://vidopix.vercel.app)** (ver [Despliegue](#despliegue)).
+> **Estado:** v1.2.0, todas las fases de [SPEC.md](SPEC.md) terminadas. La animación de arriba se dibujó en el editor, con cuatro capas y ocho fotogramas, y se exportó con su propia exportación a GIF (`pnpm showcase` la vuelve a dibujar). **[Pruébalo online](https://vidopix.vercel.app)** (ver [Despliegue](#despliegue)).
 
 ![El editor con una animación, su línea de tiempo y el papel cebolla](docs/media/animation.png)
 
@@ -14,7 +14,7 @@ Un editor de pixel art que funciona en el navegador: sin instalar nada, sin cuen
 
 - Ser la pieza principal de un portfolio: arquitectura, algoritmos, rendimiento y diseño de producto.
 - Ser usable de verdad: un artista debe poder hacer un sprite de 64×64 de principio a fin y exportarlo.
-- Cargar rápido y funcionar sin conexión.
+- Cargar rápido y funcionar sin conexión. La primera visita pregunta qué tamaño de lienzo quieres.
 
 ## Qué hace
 
@@ -45,7 +45,7 @@ Un editor de pixel art que funciona en el navegador: sin instalar nada, sin cuen
 
 **Animación** (fase 5)
 
-- Una línea de tiempo de fotogramas con una duración cada uno, reproducción en bucle, papel cebolla, y exportación a GIF animado o a una hoja de sprites con un JSON de coordenadas. Exportación a PNG de 1× a 32×.
+- Una línea de tiempo de fotogramas (se añaden con el botón Nuevo fotograma o con el recuadro del final de la tira) con una duración cada uno, reproducción en bucle, papel cebolla, y exportación a GIF animado o a una hoja de sprites con un JSON de coordenadas. Exportación a PNG de 1× a 32×.
 
 ![Exportando un GIF animado](docs/media/export.png)
 

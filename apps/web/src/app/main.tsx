@@ -129,6 +129,23 @@ document.addEventListener('visibilitychange', () => {
 });
 window.addEventListener('pagehide', flush);
 
+const WELCOMED_KEY = 'vidopix.welcomed';
+const hasBeenWelcomed = (): boolean => {
+  try {
+    return window.localStorage.getItem(WELCOMED_KEY) !== null;
+  } catch {
+    // Storage blocked: do not nag on every visit.
+    return true;
+  }
+};
+const markWelcomed = (): void => {
+  try {
+    window.localStorage.setItem(WELCOMED_KEY, '1');
+  } catch {
+    // Nothing to do: the dialog may greet again next time.
+  }
+};
+
 // A shared link wins over the last project; otherwise pick up where the user left off.
 void (async () => {
   const fromLink = await projects.openFromLocation(window.location.hash);
@@ -136,5 +153,10 @@ void (async () => {
     window.history.replaceState(null, '', window.location.pathname + window.location.search);
     return;
   }
-  await persistence.restoreLast();
+  const restored = await persistence.restoreLast();
+  // A first visit has nothing to pick up from: ask what size to start with, once.
+  if (restored === 'none' && !hasBeenWelcomed()) {
+    markWelcomed();
+    store.getState().openWelcome();
+  }
 })();
