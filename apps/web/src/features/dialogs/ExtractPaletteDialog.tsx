@@ -10,6 +10,7 @@ import { Button } from '../../design-system/Button';
 import { Dialog } from '../../design-system/Dialog';
 import { Slider, TextField } from '../../design-system/Field';
 import { toCssColor } from '../../state/css-color';
+import { useT } from '../../i18n/useT';
 import { useEditor, useEditorState } from '../../state/editor-context';
 import hintStyles from './NewSpriteDialog.module.css';
 import styles from './ExtractPaletteDialog.module.css';
@@ -18,6 +19,7 @@ type Status = 'idle' | 'working' | 'done' | 'canceled' | 'error';
 
 export function ExtractPaletteDialog() {
   const { store } = useEditor();
+  const t = useT();
   const mode = useEditorState((state) => state.paletteMode);
   const [file, setFile] = useState<File | null>(null);
   const [count, setCount] = useState(16);
@@ -55,17 +57,15 @@ export function ExtractPaletteDialog() {
       .then((found) => {
         setColors(found);
         setStatus(found.length === 0 ? 'error' : 'done');
-        setMessage(
-          found.length === 0 ? 'That image has no opaque pixels to take colors from.' : '',
-        );
+        setMessage(found.length === 0 ? t('extract.noPixels') : '');
       })
       .catch((error: unknown) => {
         if (error instanceof ExtractionCanceled) {
           setStatus('canceled');
-          setMessage('Extraction canceled.');
+          setMessage(t('extract.canceled'));
         } else {
           setStatus('error');
-          setMessage(error instanceof Error ? error.message : 'The image could not be read.');
+          setMessage(t('extract.readFailed'));
         }
       })
       .finally(() => {
@@ -86,7 +86,7 @@ export function ExtractPaletteDialog() {
 
   return (
     <Dialog
-      title="Extract palette from an image"
+      title={t('extract.title')}
       onClose={close}
       onSubmit={status === 'done' ? apply : extract}
       footer={
@@ -97,25 +97,25 @@ export function ExtractPaletteDialog() {
                 running.current?.cancel();
               }}
             >
-              Cancel extraction
+              {t('extract.cancel')}
             </Button>
           ) : (
-            <Button onClick={close}>Close</Button>
+            <Button onClick={close}>{t('common.close')}</Button>
           )}
           {status === 'done' ? (
             <Button type="submit" variant="primary">
-              {mode === 'replace' ? 'Use as palette' : 'Add to palette'}
+              {mode === 'replace' ? t('extract.use') : t('extract.add')}
             </Button>
           ) : (
             <Button type="submit" variant="primary" disabled={!file || working}>
-              Extract
+              {t('extract.extract')}
             </Button>
           )}
         </>
       }
     >
       <TextField
-        label="Image"
+        label={t('extract.image')}
         type="file"
         accept="image/*"
         onChange={(event) => {
@@ -126,7 +126,7 @@ export function ExtractPaletteDialog() {
         }}
       />
       <Slider
-        label="Colors"
+        label={t('extract.colors')}
         value={count}
         min={4}
         max={64}
@@ -141,7 +141,7 @@ export function ExtractPaletteDialog() {
             className={styles.progress}
             value={progress}
             max={1}
-            aria-label={phase === 'decoding' ? 'Reading the image' : 'Choosing colors'}
+            aria-label={phase === 'decoding' ? t('extract.reading') : t('extract.choosing')}
           />
           <p className={styles.status} role="status">
             {phase === 'decoding' ? 'Reading the image…' : 'Choosing colors…'} The editor stays
@@ -153,7 +153,7 @@ export function ExtractPaletteDialog() {
         <div
           className={styles.strip}
           role="img"
-          aria-label={`${String(colors.length)} extracted colors`}
+          aria-label={t('extract.found', { count: colors.length })}
         >
           {colors.map((color) => (
             <span
@@ -170,9 +170,7 @@ export function ExtractPaletteDialog() {
           {message}
         </p>
       ) : (
-        <p className={hintStyles.hint}>
-          The image is reduced to at most 256×256 first, so even a large photo is quick.
-        </p>
+        <p className={hintStyles.hint}>{t('extract.hint')}</p>
       )}
     </Dialog>
   );

@@ -1,4 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
+import { DEFAULT_LANGUAGE, isLanguage, translate } from '../i18n';
 
 interface Props {
   readonly children: ReactNode;
@@ -21,10 +22,12 @@ export class ErrorBoundary extends Component<Props, State> {
 
   override render(): ReactNode {
     if (this.state.failed) {
+      const current = document.documentElement.lang;
+      const language = isLanguage(current) ? current : DEFAULT_LANGUAGE;
       return (
         <main role="alert">
-          <h1>Something went wrong</h1>
-          <p>Reload the page to continue.</p>
+          <h1>{translate(language, 'error.title')}</h1>
+          <p>{translate(language, 'error.body')}</p>
         </main>
       );
     }

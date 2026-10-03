@@ -1,4 +1,10 @@
-import type { EditorSession, PointerInput } from '@vidopix/core';
+import {
+  pinchViewport,
+  type EditorSession,
+  type PointerInput,
+  type TouchPair,
+  type Viewport,
+} from '@vidopix/core';
 import type { EditorStore } from '../state/editor-store';
 import type { CanvasRenderer } from './canvas-renderer';
 
@@ -24,18 +30,52 @@ export function attachPointerInput(
   let pan: PanDrag | null = null;
   let lastPixel: { x: number; y: number } | null = null;
 
+  // Two-finger gestures: pinch to zoom and drag to pan. While fingers are down, nothing is drawn.
+  const touches = new Map<number, { x: number; y: number }>();
+  let gesture: { from: TouchPair; view: Viewport } | null = null;
+  let gestureBlocksDrawing = false;
+
+  const touchPair = (): TouchPair | null => {
+    const [a, b] = [...touches.values()];
+    return a && b ? { a: { ...a }, b: { ...b } } : null;
+  };
+
   const localPoint = (event: MouseEvent): { x: number; y: number } => {
     const bounds = element.getBoundingClientRect();
     return { x: event.clientX - bounds.left, y: event.clientY - bounds.top };
   };
 
-  const toInput = (event: MouseEvent, button: PointerInput['button']): PointerInput => {
+  const toInput = (event: PointerEvent, button: PointerInput['button']): PointerInput => {
     const point = localPoint(event);
     const pixel = renderer.toDocument(point.x, point.y);
-    return { x: pixel.x, y: pixel.y, button, shift: event.shiftKey };
+    // Only pens report a meaningful pressure; a mouse always says 0.5 while pressed.
+    const pressure = event.pointerType === 'pen' ? { pressure: event.pressure } : {};
+    return { x: pixel.x, y: pixel.y, button, shift: event.shiftKey, ...pressure };
+  };
+
+  const startGestureIfTwoFingers = (): void => {
+    const pair = touchPair();
+    if (!pair || touches.size !== 2) return;
+    // A second finger turns whatever the first one was doing into a gesture.
+    session.cancelStroke();
+    drawingPointer = null;
+    lastPixel = null;
+    gestureBlocksDrawing = true;
+    gesture = { from: pair, view: store.getState().viewport };
   };
 
   const onPointerDown = (event: PointerEvent): void => {
+    if (event.pointerType === 'touch') {
+      const point = localPoint(event);
+      touches.set(event.pointerId, point);
+      element.focus({ preventScroll: true });
+      element.setPointerCapture(event.pointerId);
+      if (touches.size >= 2) {
+        startGestureIfTwoFingers();
+        return;
+      }
+      if (gestureBlocksDrawing) return;
+    }
     if (pan || drawingPointer !== null) return;
     element.focus({ preventScroll: true });
     const wantsPan = event.button === 1 || (event.button === 0 && store.getState().panMode);
@@ -63,6 +103,15 @@ export function attachPointerInput(
   };
 
   const onPointerMove = (event: PointerEvent): void => {
+    if (event.pointerType === 'touch' && touches.has(event.pointerId)) {
+      touches.set(event.pointerId, localPoint(event));
+      const pair = touchPair();
+      if (gesture && pair) {
+        store.getState().setViewport(pinchViewport(gesture.view, gesture.from, pair));
+        return;
+      }
+      if (gestureBlocksDrawing) return;
+    }
     const point = localPoint(event);
     const hovered = renderer.toDocument(point.x, point.y);
     const state = store.getState();
@@ -91,7 +140,16 @@ export function attachPointerInput(
     }
   };
 
+  const endTouch = (event: PointerEvent): boolean => {
+    if (event.pointerType !== 'touch') return false;
+    touches.delete(event.pointerId);
+    if (touches.size < 2) gesture = null;
+    if (touches.size === 0) gestureBlocksDrawing = false;
+    return gestureBlocksDrawing;
+  };
+
   const finish = (event: PointerEvent): void => {
+    if (endTouch(event)) return;
     if (pan?.pointerId === event.pointerId) {
       pan = null;
       return;
@@ -103,6 +161,7 @@ export function attachPointerInput(
   };
 
   const onPointerCancel = (event: PointerEvent): void => {
+    if (endTouch(event)) return;
     if (pan?.pointerId === event.pointerId) {
       pan = null;
       return;

@@ -2,6 +2,26 @@
 
 All notable changes to this project are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses [Semantic Versioning](https://semver.org/).
 
+## [1.0.0] - 2026-10-03
+
+### Added
+
+- Automatic saving to the browser (IndexedDB), a list of recent projects with thumbnails, and reopening the last project on the next visit. A synchronous emergency copy means reloading or closing the page right after a change loses nothing (ADR 013).
+- Open and save `.vidopix` files: versioned JSON validated on reading, with migrations between versions and limits of 20 MB, 1024×1024 pixels and 64 layers (ADR 007). The sprite name is editable from the top bar.
+- Share a sprite as a link: the sprite is compressed inside the URL fragment, nothing is uploaded, and opening a link imports it as a new project (ADR 014).
+- Installable and usable offline: a service worker, a web manifest and icons. Updates wait until the user accepts them from the status bar.
+- Drawing aids: horizontal and vertical symmetry with guides on the canvas, 4×4 ordered (Bayer) dithering with adjustable density, a pixel-perfect mode for the pencil that removes extra corner pixels, and optional pen pressure for the brush size.
+- Touch: pinch to zoom and two fingers to pan, without drawing while fingers are down. Larger targets on touch screens, and a layout that works down to 768 px of width.
+- The interface in English and Spanish, following the browser language with a switch in the Help menu (ADR 015).
+- A keyboard shortcuts panel (`?` or Help menu), generated from the same table the shortcuts are checked against.
+- `pnpm lighthouse`, which measures the production build.
+
+### Changed
+
+- Palette file formats, project formats and Zod load on demand. Zod runs without `eval`, which the Content Security Policy forbids.
+- The two color swatches are separate squares, so each is a touch target of its own.
+- The `Open file` item and `Ctrl/Cmd+O`, `Ctrl/Cmd+S` shortcuts were added to the File menu.
+
 ## [0.3.0] - 2026-10-03
 
 ### Added

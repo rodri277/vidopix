@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Button } from '../../design-system/Button';
 import { Dialog } from '../../design-system/Dialog';
 import { toCssColor } from '../../state/css-color';
+import { useT } from '../../i18n/useT';
 import { useEditor, useEditorState } from '../../state/editor-context';
 import fieldStyles from '../../design-system/Field.module.css';
 import hintStyles from './NewSpriteDialog.module.css';
@@ -11,6 +12,7 @@ const hexOf = (color: Color): string => toHex(color).toUpperCase();
 
 export function ReplaceColorDialog() {
   const { store } = useEditor();
+  const t = useT();
   const primary = useEditorState((state) => state.primary);
   const secondary = useEditorState((state) => state.secondary);
   const palette = useEditorState((state) => state.palette);
@@ -28,8 +30,8 @@ export function ReplaceColorDialog() {
 
   const options = (
     <>
-      <option value="primary">Primary color ({hexOf(primary)})</option>
-      <option value="secondary">Secondary color ({hexOf(secondary)})</option>
+      <option value="primary">{t('replace.primaryOption', { hex: hexOf(primary) })}</option>
+      <option value="secondary">{t('replace.secondaryOption', { hex: hexOf(secondary) })}</option>
       {palette.colors.map((entry, index) => (
         <option key={entry.color} value={`p-${String(index)}`}>
           {entry.name ? `${entry.name} ` : ''}
@@ -45,7 +47,7 @@ export function ReplaceColorDialog() {
 
   return (
     <Dialog
-      title="Replace color"
+      title={t('replace.title')}
       onClose={close}
       onSubmit={() => {
         store.getState().replaceColor(from, to);
@@ -53,15 +55,15 @@ export function ReplaceColorDialog() {
       }}
       footer={
         <>
-          <Button onClick={close}>Cancel</Button>
+          <Button onClick={close}>{t('common.cancel')}</Button>
           <Button type="submit" variant="primary" disabled={from === to}>
-            Replace
+            {t('replace.button')}
           </Button>
         </>
       }
     >
       <label className={fieldStyles.field}>
-        Replace
+        {t('replace.from')}
         <select
           className={fieldStyles.input}
           value={fromKey}
@@ -73,7 +75,7 @@ export function ReplaceColorDialog() {
         </select>
       </label>
       <label className={fieldStyles.field}>
-        With
+        {t('replace.with')}
         <select
           className={fieldStyles.input}
           value={toKey}
@@ -94,8 +96,8 @@ export function ReplaceColorDialog() {
         />
       </div>
       <p className={hintStyles.hint}>
-        Matches the exact color on every layer, hidden ones included; locked layers are skipped.
-        {hasSelection ? ' Only the selected area changes.' : ''} One undo step.
+        {t('replace.hint')} {hasSelection ? `${t('replace.selectionOnly')} ` : ''}
+        {t('replace.oneUndo')}
       </p>
     </Dialog>
   );

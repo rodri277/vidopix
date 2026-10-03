@@ -3,6 +3,7 @@ import { traceEllipse, traceRect } from '../algorithms/shapes.js';
 import { rectContains } from '../domain/rect.js';
 import { PatchRecorder } from '../history/patch-recorder.js';
 import { stampBrush } from './brush.js';
+import { Painter } from './painter.js';
 import { constrainLine, constrainSquare, type Point } from './constrain.js';
 import type { PointerInput, Tool, ToolContext, ToolId } from './tool.js';
 
@@ -44,8 +45,14 @@ export class ShapeTool implements Tool {
     context.setPreview(null);
 
     const recorder = new PatchRecorder(context.buffer, context.selection);
+    const painter = new Painter(
+      recorder,
+      context.options,
+      context.buffer.width,
+      context.buffer.height,
+    );
     this.trace(context, drag, (x, y) => {
-      recorder.setPixel(x, y, drag.color);
+      painter.paint(x, y, drag.color);
     });
     context.markDirty(recorder.takeDirty());
     context.commit(this.label, recorder.finish());
@@ -63,12 +70,21 @@ export class ShapeTool implements Tool {
   }
 
   private showPreview(context: ToolContext, drag: Drag): void {
-    const { width } = context.buffer;
+    const { width, height } = context.buffer;
     const { selection } = context;
+    // The same expansion as the real drawing (mirror images and dither), without writing anything.
+    const painter = new Painter(
+      new PatchRecorder(context.buffer, selection),
+      context.options,
+      width,
+      height,
+    );
     const pixels: number[] = [];
     this.trace(context, drag, (x, y) => {
-      if (context.buffer.contains(x, y) && (!selection || rectContains(selection, x, y))) {
-        pixels.push(y * width + x);
+      for (const [px, py] of painter.expand(x, y)) {
+        if (!context.buffer.contains(px, py)) continue;
+        if (selection && !rectContains(selection, px, py)) continue;
+        pixels.push(py * width + px);
       }
     });
     context.setPreview({ pixels, color: drag.color });

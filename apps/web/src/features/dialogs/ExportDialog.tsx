@@ -4,6 +4,7 @@ import { downloadBlob, encodePng, safeFileName } from '../../adapters/png-export
 import { Button } from '../../design-system/Button';
 import { Dialog } from '../../design-system/Dialog';
 import { Checkbox, Slider } from '../../design-system/Field';
+import { useT } from '../../i18n/useT';
 import { useEditor, useEditorState } from '../../state/editor-context';
 import styles from './NewSpriteDialog.module.css';
 
@@ -11,6 +12,7 @@ const OPAQUE_WHITE = packRgba(255, 255, 255, 255);
 
 export function ExportDialog() {
   const { session, store } = useEditor();
+  const t = useT();
   const width = useEditorState((state) => state.spriteWidth);
   const height = useEditorState((state) => state.spriteHeight);
   const name = useEditorState((state) => state.spriteName);
@@ -34,8 +36,12 @@ export function ExportDialog() {
       if (!image.ok) {
         setError(
           image.error.kind === 'too-large'
-            ? `That would be ${String(image.error.width)}×${String(image.error.height)} px. Browsers cannot go above ${String(image.error.max)} px per side. Choose a smaller scale.`
-            : 'Choose a whole-number scale.',
+            ? t('export.tooLarge', {
+                width: image.error.width,
+                height: image.error.height,
+                max: image.error.max,
+              })
+            : t('export.invalidScale'),
         );
         return;
       }
@@ -43,7 +49,7 @@ export function ExportDialog() {
       downloadBlob(blob, safeFileName(name, 'png'));
       close();
     } catch {
-      setError('The browser could not create the PNG. Try a smaller scale.');
+      setError(t('export.failed'));
     } finally {
       setBusy(false);
     }
@@ -51,31 +57,31 @@ export function ExportDialog() {
 
   return (
     <Dialog
-      title="Export PNG"
+      title={t('export.title')}
       onClose={close}
       onSubmit={() => {
         void exportPng();
       }}
       footer={
         <>
-          <Button onClick={close}>Cancel</Button>
+          <Button onClick={close}>{t('common.cancel')}</Button>
           <Button type="submit" variant="primary" disabled={busy}>
-            Export
+            {t('export.export')}
           </Button>
         </>
       }
     >
       <Slider
-        label="Scale"
+        label={t('export.scale')}
         value={scale}
         min={MIN_EXPORT_SCALE}
         max={MAX_EXPORT_SCALE}
         display={`×${String(scale)}`}
         onChange={setScale}
       />
-      <Checkbox label="Transparent background" checked={transparent} onChange={setTransparent} />
+      <Checkbox label={t('export.transparent')} checked={transparent} onChange={setTransparent} />
       <p className={styles.hint}>
-        Output size: {String(width * scale)}×{String(height * scale)} px
+        {t('export.size', { width: width * scale, height: height * scale })}
       </p>
       {error ? (
         <p className={styles.error} role="alert">

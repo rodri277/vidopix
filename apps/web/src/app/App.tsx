@@ -1,6 +1,7 @@
 import type { EditorSession } from '@vidopix/core';
 import { AppLayout } from '../design-system/AppLayout';
 import { Tabs } from '../design-system/Tabs';
+import { useT } from '../i18n/useT';
 import { Announcer } from '../features/a11y/Announcer';
 import { CanvasView } from '../features/canvas/CanvasView';
 import { ColorPanel } from '../features/color/ColorPanel';
@@ -12,18 +13,28 @@ import { AppMenu } from '../features/menu/AppMenu';
 import { StatusBar } from '../features/statusbar/StatusBar';
 import { ToolOptionsBar } from '../features/tool-options/ToolOptionsBar';
 import { Toolbar } from '../features/toolbar/Toolbar';
-import { EditorProvider, useEditorState } from '../state/editor-context';
+import {
+  EditorProvider,
+  useEditor,
+  useEditorState,
+  type EditorServices,
+} from '../state/editor-context';
 import type { EditorStore } from '../state/editor-store';
 import { useGlobalShortcuts } from './useGlobalShortcuts';
 
 interface Props {
   readonly session: EditorSession;
   readonly store: EditorStore;
+  readonly services: EditorServices;
+  /** Installs a waiting update of the app, when there is one. */
+  readonly onUpdate?: () => void;
 }
 
-function Editor({ session, store }: Props) {
+function Editor({ session, store, onUpdate }: Omit<Props, 'services'>) {
   const panelsHidden = useEditorState((state) => state.panelsHidden);
-  useGlobalShortcuts(session, store);
+  const { services } = useEditor();
+  const t = useT();
+  useGlobalShortcuts(session, store, services);
   return (
     <>
       <AppLayout
@@ -36,16 +47,16 @@ function Editor({ session, store }: Props) {
           <>
             <LayersPanel />
             <Tabs
-              label="Color tools"
+              label={t('tabs.label')}
               tabs={[
-                { id: 'color', label: 'Color', content: <ColorPanel /> },
-                { id: 'palette', label: 'Palette', content: <PalettePanel /> },
-                { id: 'generate', label: 'Generate', content: <GeneratePanel /> },
+                { id: 'color', label: t('tabs.color'), content: <ColorPanel /> },
+                { id: 'palette', label: t('tabs.palette'), content: <PalettePanel /> },
+                { id: 'generate', label: t('tabs.generate'), content: <GeneratePanel /> },
               ]}
             />
           </>
         }
-        status={<StatusBar />}
+        status={<StatusBar {...(onUpdate ? { onUpdate } : {})} />}
       />
       <Dialogs />
       <Announcer />
@@ -54,10 +65,10 @@ function Editor({ session, store }: Props) {
 }
 
 /** Wires the editing session to the interface. The only place features are put together. */
-export function App({ session, store }: Props) {
+export function App({ session, store, services, onUpdate }: Props) {
   return (
-    <EditorProvider session={session} store={store}>
-      <Editor session={session} store={store} />
+    <EditorProvider session={session} store={store} services={services}>
+      <Editor session={session} store={store} {...(onUpdate ? { onUpdate } : {})} />
     </EditorProvider>
   );
 }

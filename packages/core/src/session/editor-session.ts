@@ -31,6 +31,7 @@ import {
   type ToolId,
   type ToolOptions,
 } from '../tools/tool.js';
+import { MAX_DITHER } from '../tools/painter.js';
 import { Emitter } from './emitter.js';
 
 export type { HistoryCause } from '../document/document-editor.js';
@@ -68,6 +69,7 @@ const DOCUMENT_EVENTS: ReadonlySet<string> = new Set([
   'layersChanged',
   'selectionChanged',
   'paletteChanged',
+  'nameChanged',
   'floatingChanged',
   'spriteReplaced',
   'historyChanged',
@@ -202,6 +204,12 @@ export class EditorSession {
     return result;
   }
 
+  /** Replaces the document with an existing sprite, for example one opened from a file. */
+  openSprite(sprite: Sprite): void {
+    this.cancelStroke();
+    this.document.replaceSprite(sprite);
+  }
+
   /** Flattens the document into pixels at a whole-number scale, ready to be encoded as PNG. */
   exportImage(options: ExportOptions): Result<ExportImage, ExportError> {
     this.document.commitFloating();
@@ -254,6 +262,11 @@ export class EditorSession {
       fillMode: changes.fillMode ?? this.currentOptions.fillMode,
       tolerance: clamp(changes.tolerance ?? this.currentOptions.tolerance, 0, 255),
       shapeFilled: changes.shapeFilled ?? this.currentOptions.shapeFilled,
+      mirrorX: changes.mirrorX ?? this.currentOptions.mirrorX,
+      mirrorY: changes.mirrorY ?? this.currentOptions.mirrorY,
+      dither: clamp(changes.dither ?? this.currentOptions.dither, 1, MAX_DITHER),
+      pixelPerfect: changes.pixelPerfect ?? this.currentOptions.pixelPerfect,
+      pressure: changes.pressure ?? this.currentOptions.pressure,
     };
     this.currentOptions = next;
     this.events.emit('optionsChanged', { options: next });

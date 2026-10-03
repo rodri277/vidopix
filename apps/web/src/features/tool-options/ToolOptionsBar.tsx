@@ -1,5 +1,6 @@
 import { MAX_BRUSH_SIZE, MIN_BRUSH_SIZE, type ToolOptions } from '@vidopix/core';
 import { Slider } from '../../design-system/Field';
+import { useT, type TFunction } from '../../i18n/useT';
 import { useEditor, useEditorState } from '../../state/editor-context';
 import styles from './ToolOptionsBar.module.css';
 
@@ -30,9 +31,31 @@ function Segmented({ label, options, value, onChange }: SegmentedProps) {
   );
 }
 
+interface ToggleProps {
+  readonly label: string;
+  readonly pressed: boolean;
+  readonly onChange: (pressed: boolean) => void;
+}
+
+function Toggle({ label, pressed, onChange }: ToggleProps) {
+  return (
+    <button
+      type="button"
+      className={styles.toggle}
+      aria-pressed={pressed}
+      onClick={() => {
+        onChange(!pressed);
+      }}
+    >
+      {label}
+    </button>
+  );
+}
+
 /** Settings of the active tool. */
 export function ToolOptionsBar() {
   const { store } = useEditor();
+  const t: TFunction = useT();
   const tool = useEditorState((state) => state.tool);
   const options = useEditorState((state) => state.options);
   const set = (changes: Partial<ToolOptions>): void => {
@@ -42,11 +65,11 @@ export function ToolOptionsBar() {
   const brush = (
     <div className={styles.slider}>
       <Slider
-        label="Size"
+        label={t('options.size')}
         value={options.brushSize}
         min={MIN_BRUSH_SIZE}
         max={MAX_BRUSH_SIZE}
-        display={`${String(options.brushSize)} px`}
+        display={t('options.sizeValue', { size: options.brushSize })}
         onChange={(brushSize) => {
           set({ brushSize });
         }}
@@ -54,42 +77,77 @@ export function ToolOptionsBar() {
     </div>
   );
 
+  const aids = (
+    <div className={styles.group} role="group" aria-label={t('options.aids')}>
+      <Toggle
+        label={t('options.mirrorX')}
+        pressed={options.mirrorX}
+        onChange={(mirrorX) => {
+          set({ mirrorX });
+        }}
+      />
+      <Toggle
+        label={t('options.mirrorY')}
+        pressed={options.mirrorY}
+        onChange={(mirrorY) => {
+          set({ mirrorY });
+        }}
+      />
+      <div className={styles.smallSlider}>
+        <Slider
+          label={t('options.dither')}
+          value={options.dither}
+          min={1}
+          max={16}
+          display={t('options.ditherValue', { percent: Math.round((options.dither / 16) * 100) })}
+          onChange={(dither) => {
+            set({ dither });
+          }}
+        />
+      </div>
+    </div>
+  );
+
   if (tool === 'pencil' || tool === 'eraser' || tool === 'line') {
     return (
       <div className={styles.group}>
         {brush}
-        {tool === 'line' ? <p className={styles.hint}>Hold Shift for 0, 45 or 90 degrees</p> : null}
+        {aids}
+        {tool === 'pencil' ? (
+          <>
+            <Toggle
+              label={t('options.pixelPerfect')}
+              pressed={options.pixelPerfect}
+              onChange={(pixelPerfect) => {
+                set({ pixelPerfect });
+              }}
+            />
+            <Toggle
+              label={t('options.pressure')}
+              pressed={options.pressure}
+              onChange={(pressure) => {
+                set({ pressure });
+              }}
+            />
+          </>
+        ) : null}
+        {tool === 'line' ? <p className={styles.hint}>{t('options.shiftLine')}</p> : null}
       </div>
     );
   }
 
-  if (tool === 'select') {
-    return (
-      <p className={styles.hint}>
-        Drag to select a rectangle, Shift for a square. Click to deselect. Drawing stays inside the
-        selection.
-      </p>
-    );
-  }
-
-  if (tool === 'move') {
-    return (
-      <p className={styles.hint}>
-        Drag the selection to move its pixels (the whole layer if nothing is selected). Enter drops
-        them, Esc cancels.
-      </p>
-    );
-  }
+  if (tool === 'select') return <p className={styles.hint}>{t('options.hintSelect')}</p>;
+  if (tool === 'move') return <p className={styles.hint}>{t('options.hintMove')}</p>;
 
   if (tool === 'fill') {
     return (
       <div className={styles.group}>
         <Segmented
-          label="Fill mode"
+          label={t('options.fillMode')}
           value={options.fillMode}
           options={[
-            { value: 'contiguous', label: 'Contiguous' },
-            { value: 'global', label: 'Global' },
+            { value: 'contiguous', label: t('options.contiguous') },
+            { value: 'global', label: t('options.global') },
           ]}
           onChange={(value) => {
             set({ fillMode: value === 'global' ? 'global' : 'contiguous' });
@@ -97,12 +155,24 @@ export function ToolOptionsBar() {
         />
         <div className={styles.slider}>
           <Slider
-            label="Tolerance"
+            label={t('options.tolerance')}
             value={options.tolerance}
             min={0}
             max={255}
             onChange={(tolerance) => {
               set({ tolerance });
+            }}
+          />
+        </div>
+        <div className={styles.smallSlider}>
+          <Slider
+            label={t('options.dither')}
+            value={options.dither}
+            min={1}
+            max={16}
+            display={t('options.ditherValue', { percent: Math.round((options.dither / 16) * 100) })}
+            onChange={(dither) => {
+              set({ dither });
             }}
           />
         </div>
@@ -114,26 +184,23 @@ export function ToolOptionsBar() {
     return (
       <div className={styles.group}>
         <Segmented
-          label="Shape style"
+          label={t('options.shapeStyle')}
           value={options.shapeFilled ? 'filled' : 'outline'}
           options={[
-            { value: 'outline', label: 'Outline' },
-            { value: 'filled', label: 'Filled' },
+            { value: 'outline', label: t('options.outline') },
+            { value: 'filled', label: t('options.filled') },
           ]}
           onChange={(value) => {
             set({ shapeFilled: value === 'filled' });
           }}
         />
+        {aids}
         <p className={styles.hint}>
-          Hold Shift for a perfect {tool === 'ellipse' ? 'circle' : 'square'}
+          {tool === 'ellipse' ? t('options.shiftCircle') : t('options.shiftSquare')}
         </p>
       </div>
     );
   }
 
-  return (
-    <p className={styles.hint}>
-      Click a pixel to pick its color. Right click picks the secondary color.
-    </p>
-  );
+  return <p className={styles.hint}>{t('options.hintEyedropper')}</p>;
 }

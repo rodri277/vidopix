@@ -42,10 +42,11 @@ export {
   clampZoom,
   fitViewport,
   nextZoom,
+  pinchViewport,
   screenToDocument,
   zoomAt,
 } from './viewport/viewport.js';
-export type { Viewport } from './viewport/viewport.js';
+export type { TouchPair, TouchPoint, Viewport } from './viewport/viewport.js';
 export {
   blendPixel,
   compositePixel,
@@ -86,3 +87,6 @@ export type { ProgressFn } from './algorithms/median-cut.js';
 // JSON validator they bring along) on demand instead of in the first download.
 export { PALETTE_PRESETS, presetToColors } from './data/palette-presets.js';
 export type { PalettePreset } from './data/palette-presets.js';
+export { bytesToBase64, base64ToBytes } from './io/bytes.js';
+// Saving, opening and sharing live in '@vidopix/core/project-formats' so the app loads them on demand.
+export { BAYER_4X4, MAX_DITHER, ditherAllows } from './tools/painter.js';

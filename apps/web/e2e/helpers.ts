@@ -15,7 +15,7 @@ export async function readCanvas(
   spriteWidth = SPRITE_SIZE,
   spriteHeight = SPRITE_SIZE,
 ): Promise<Canvas> {
-  const surface = page.getByRole('application', { name: /Drawing canvas/ });
+  const surface = page.getByRole('application');
   const box = await surface.boundingBox();
   if (!box) throw new Error('Canvas is not visible');
   const status = await page.getByRole('contentinfo').innerText();

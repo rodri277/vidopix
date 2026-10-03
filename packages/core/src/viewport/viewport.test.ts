@@ -7,6 +7,7 @@ import {
   clampZoom,
   fitViewport,
   nextZoom,
+  pinchViewport,
   screenToDocument,
   zoomAt,
 } from './viewport.js';
@@ -98,5 +99,71 @@ describe('centerViewport / fitViewport', () => {
 
   it('never exceeds the maximum zoom for tiny sprites', () => {
     expect(fitViewport(4000, 4000, 1, 1, 0).zoom).toBe(MAX_ZOOM);
+  });
+});
+
+describe('pinchViewport', () => {
+  const start = { zoom: 4, panX: 20, panY: 30 };
+  const pair = (ax: number, ay: number, bx: number, by: number) => ({
+    a: { x: ax, y: ay },
+    b: { x: bx, y: by },
+  });
+
+  it('leaves the view alone when the fingers do not move', () => {
+    const fingers = pair(100, 100, 200, 100);
+    expect(pinchViewport(start, fingers, fingers)).toEqual(start);
+  });
+
+  it('pans when both fingers move together', () => {
+    expect(pinchViewport(start, pair(100, 100, 200, 100), pair(130, 90, 230, 90))).toEqual({
+      zoom: 4,
+      panX: 50,
+      panY: 20,
+    });
+  });
+
+  it('zooms in when the fingers spread and out when they come together', () => {
+    const spread = pinchViewport(start, pair(100, 100, 200, 100), pair(50, 100, 250, 100));
+    expect(spread.zoom).toBe(8);
+    const squeeze = pinchViewport(start, pair(100, 100, 300, 100), pair(150, 100, 250, 100));
+    expect(squeeze.zoom).toBe(2);
+  });
+
+  it('keeps the document point between the fingers between the fingers', () => {
+    fc.assert(
+      fc.property(
+        fc.integer({ min: MIN_ZOOM, max: MAX_ZOOM }),
+        fc.integer({ min: -300, max: 300 }),
+        fc.integer({ min: -300, max: 300 }),
+        fc.integer({ min: 50, max: 300 }),
+        fc.integer({ min: 50, max: 300 }),
+        fc.integer({ min: -100, max: 100 }),
+        (zoom, panX, panY, width, newWidth, shift) => {
+          const view = { zoom, panX, panY };
+          const from = pair(200, 200, 200 + width, 200);
+          const to = pair(200 + shift, 210, 200 + shift + newWidth, 210);
+          const result = pinchViewport(view, from, to);
+          const mid = (p: ReturnType<typeof pair>) => ({
+            x: (p.a.x + p.b.x) / 2,
+            y: (p.a.y + p.b.y) / 2,
+          });
+          const docBefore = { x: (mid(from).x - panX) / zoom, y: (mid(from).y - panY) / zoom };
+          const docAfter = {
+            x: (mid(to).x - result.panX) / result.zoom,
+            y: (mid(to).y - result.panY) / result.zoom,
+          };
+          expect(Math.abs(docBefore.x - docAfter.x) * result.zoom).toBeLessThanOrEqual(0.5 + 1e-9);
+          expect(Math.abs(docBefore.y - docAfter.y) * result.zoom).toBeLessThanOrEqual(0.5 + 1e-9);
+        },
+      ),
+    );
+  });
+
+  it('stays inside the zoom range, and copes with fingers on the same spot', () => {
+    expect(pinchViewport(start, pair(100, 100, 110, 100), pair(0, 100, 900, 100)).zoom).toBe(64);
+    expect(pinchViewport(start, pair(0, 100, 900, 100), pair(100, 100, 101, 100)).zoom).toBe(1);
+    expect(Number.isFinite(pinchViewport(start, pair(5, 5, 5, 5), pair(9, 9, 20, 20)).zoom)).toBe(
+      true,
+    );
   });
 });

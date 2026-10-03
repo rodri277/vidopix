@@ -6,6 +6,8 @@ export interface MenuItem {
   readonly shortcut?: string;
   readonly disabled?: boolean;
   readonly separatorBefore?: boolean;
+  /** Marks the item as the current choice of a group (rendered as a menu radio item). */
+  readonly checked?: boolean;
   readonly onSelect: () => void;
 }
 
@@ -42,7 +44,7 @@ export function MenuBar({ label, menus }: Props) {
 
   const focusItem = (index: number, itemIndex: number): void => {
     const items = rootRef.current?.querySelectorAll<HTMLElement>(
-      `[data-menu="${String(index)}"] [role="menuitem"]:not(:disabled)`,
+      `[data-menu="${String(index)}"] [role^="menuitem"]:not(:disabled)`,
     );
     if (!items || items.length === 0) return;
     const wrapped = (itemIndex + items.length) % items.length;
@@ -75,7 +77,7 @@ export function MenuBar({ label, menus }: Props) {
   const onItemKeyDown = (event: KeyboardEvent, index: number): void => {
     const items = Array.from(
       rootRef.current?.querySelectorAll<HTMLElement>(
-        `[data-menu="${String(index)}"] [role="menuitem"]:not(:disabled)`,
+        `[data-menu="${String(index)}"] [role^="menuitem"]:not(:disabled)`,
       ) ?? [],
     );
     const current = items.indexOf(event.target as HTMLElement);
@@ -150,7 +152,8 @@ export function MenuBar({ label, menus }: Props) {
                     ) : null}
                     <button
                       type="button"
-                      role="menuitem"
+                      role={item.checked === undefined ? 'menuitem' : 'menuitemradio'}
+                      aria-checked={item.checked}
                       className={styles.item}
                       disabled={item.disabled === true}
                       onClick={() => {

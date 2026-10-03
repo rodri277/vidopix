@@ -1,6 +1,7 @@
 import { useEffect, useRef, type KeyboardEvent } from 'react';
 import { CanvasRenderer, type CursorShape } from '../../adapters/canvas-renderer';
 import { attachPointerInput } from '../../adapters/pointer-input';
+import { useT } from '../../i18n/useT';
 import { useEditor, useEditorState } from '../../state/editor-context';
 import styles from './CanvasView.module.css';
 
@@ -16,6 +17,7 @@ const ARROWS: Readonly<Record<string, readonly [number, number]>> = {
 
 export function CanvasView() {
   const { session, store } = useEditor();
+  const t = useT();
   const viewportRef = useRef<HTMLDivElement>(null);
   const documentRef = useRef<HTMLCanvasElement>(null);
   const gridRef = useRef<HTMLCanvasElement>(null);
@@ -173,7 +175,7 @@ export function CanvasView() {
       className={styles.viewport}
       data-pan={panMode}
       role="application"
-      aria-label="Drawing canvas. Arrow keys move the pixel cursor, Alt with arrows moves 8 pixels, hold Enter to draw. With the Move tool, arrow keys move the selected pixels."
+      aria-label={t('canvas.label')}
       // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- same reason as above
       tabIndex={0}
       onKeyDown={onKeyDown}

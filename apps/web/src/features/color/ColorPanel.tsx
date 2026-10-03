@@ -10,6 +10,7 @@ import {
 } from '@vidopix/core';
 import { useState } from 'react';
 import { Slider, TextField } from '../../design-system/Field';
+import { useT } from '../../i18n/useT';
 import { toCssColor } from '../../state/css-color';
 import type { ColorSlot } from '@vidopix/core';
 import { useEditor, useEditorState } from '../../state/editor-context';
@@ -26,6 +27,7 @@ export function ColorPanel() {
 
 function ColorEditor({ slot }: { readonly slot: ColorSlot }) {
   const { store } = useEditor();
+  const t = useT();
   const color = useEditorState((state) => (slot === 'primary' ? state.primary : state.secondary));
 
   // The sliders keep their own OKLCH values: converting back from the packed color would lose the
@@ -68,18 +70,18 @@ function ColorEditor({ slot }: { readonly slot: ColorSlot }) {
   };
 
   const { a } = unpackRgba(color);
-  const slotLabel = slot === 'primary' ? 'Primary' : 'Secondary';
+  const slotLabel = slot === 'primary' ? t('toolbar.primary') : t('toolbar.secondary');
 
   return (
     <section className={styles.panel} aria-labelledby="color-heading">
       <h2 id="color-heading" className={styles.heading}>
-        {slotLabel} color
+        {slotLabel}
       </h2>
       <div className={styles.preview}>
         <div className={styles.previewFill} style={{ background: toCssColor(color) }} />
       </div>
       <TextField
-        label="Hex"
+        label={t('color.hex')}
         mono
         value={hexText}
         spellCheck={false}
@@ -102,7 +104,7 @@ function ColorEditor({ slot }: { readonly slot: ColorSlot }) {
       />
       {hexError ? (
         <p id="hex-error" className={styles.error} role="alert">
-          Use 3, 6 or 8 hex digits, for example #7C5CFF.
+          {t('color.hexError')}
         </p>
       ) : null}
       <Slider

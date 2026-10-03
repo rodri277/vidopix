@@ -6,7 +6,6 @@ import {
   presetToColors,
   screenToDocument,
   zoomAt,
-  type BlockReason,
   type Color,
   type ColorSlot,
   type EditorSession,
@@ -20,8 +19,24 @@ import {
   type Viewport,
 } from '@vidopix/core';
 import { createStore, type StoreApi } from 'zustand/vanilla';
+import {
+  DEFAULT_LANGUAGE,
+  translate,
+  type Language,
+  type MessageKey,
+  type MessageParams,
+} from '../i18n';
+import { HISTORY_LABEL_KEYS } from '../i18n/history-labels';
+import type { SaveStatus } from './persistence';
 
-export type DialogId = 'new-sprite' | 'export' | 'extract-palette' | 'replace-color';
+export type DialogId =
+  | 'new-sprite'
+  | 'export'
+  | 'extract-palette'
+  | 'replace-color'
+  | 'recent-projects'
+  | 'share'
+  | 'shortcuts';
 
 /** What loading a preset or an imported palette does to the sprite's palette. */
 export type PaletteLoadMode = 'replace' | 'append';
@@ -39,15 +54,6 @@ export interface SystemClipboard {
 }
 
 const NOTICE_MILLISECONDS = 3500;
-
-const BLOCKED_MESSAGES: Readonly<Record<BlockReason, string>> = {
-  'layer-locked': 'The active layer is locked',
-  'layer-hidden': 'The active layer is hidden',
-  'nothing-selected': 'Nothing is selected',
-  'single-layer': 'A sprite needs at least one layer',
-  'color-in-palette': 'That color is already in the palette',
-  'palette-full': 'The palette is full (256 colors)',
-};
 
 export interface EditorState {
   // Mirrored from the session
@@ -78,6 +84,12 @@ export interface EditorState {
 
   // UI only
   readonly editingSlot: ColorSlot;
+  readonly language: Language;
+  readonly saveStatus: SaveStatus;
+  /** Why saving failed, when it did. */
+  readonly saveDetail: string;
+  /** A new version of the app is downloaded and waiting. */
+  readonly updateReady: boolean;
   readonly paletteMode: PaletteLoadMode;
   readonly viewport: Viewport;
   readonly viewSize: { readonly width: number; readonly height: number };
@@ -91,6 +103,14 @@ export interface EditorState {
 }
 
 export interface EditorActions {
+  /** Looks a text up in the current language. */
+  t(key: MessageKey, params?: MessageParams): string;
+  setLanguage(language: Language): void;
+  setSaveStatus(status: SaveStatus, detail?: string): void;
+  setUpdateReady(ready: boolean): void;
+  renameSprite(name: string): void;
+  /** Shows a short message in the status bar and announces it to screen readers. */
+  notify(message: string): void;
   selectTool(tool: ToolId): void;
   setColor(slot: ColorSlot, color: Color): void;
   setEditingSlot(slot: ColorSlot): void;
@@ -158,8 +178,19 @@ const INITIAL_VIEW_SIZE = { width: 800, height: 600 };
  * UI state for the editor. Document state lives in the core's `EditorSession`; this store mirrors
  * the parts the interface needs to render and adds view-only state such as zoom and dialogs.
  */
-export function createEditorStore(session: EditorSession, clipboard: SystemClipboard): EditorStore {
+export function createEditorStore(
+  session: EditorSession,
+  clipboard: SystemClipboard,
+  initialLanguage: Language = DEFAULT_LANGUAGE,
+  onLanguageChange: (language: Language) => void = () => undefined,
+): EditorStore {
   let noticeTimer: ReturnType<typeof setTimeout> | undefined;
+  const say = (key: MessageKey, params?: MessageParams): string =>
+    translate(store.getState().language, key, params);
+  const labelText = (label: string): string => {
+    const key = HISTORY_LABEL_KEYS[label];
+    return key ? say(key) : label;
+  };
   const showNotice = (message: string): void => {
     clearTimeout(noticeTimer);
     store.setState({ notice: message, announcement: message });
@@ -178,7 +209,7 @@ export function createEditorStore(session: EditorSession, clipboard: SystemClipb
 
   const copyToSystem = (image: PixelBuffer): void => {
     clipboard.writeImage(image).catch(() => {
-      showNotice('Copied inside Vidopix only; the browser blocked the system clipboard');
+      showNotice(say('notice.copyBlocked'));
     });
   };
 
@@ -204,6 +235,10 @@ export function createEditorStore(session: EditorSession, clipboard: SystemClipb
     notice: '',
 
     editingSlot: 'primary',
+    language: initialLanguage,
+    saveStatus: 'saved',
+    saveDetail: '',
+    updateReady: false,
     paletteMode: 'replace',
     viewport: centerViewport(
       1,
@@ -220,6 +255,23 @@ export function createEditorStore(session: EditorSession, clipboard: SystemClipb
     keyboardCursor: null,
     panMode: false,
 
+    t: (key, params) => translate(get().language, key, params),
+    setLanguage: (language) => {
+      set({ language });
+      onLanguageChange(language);
+    },
+    setSaveStatus: (saveStatus, detail = '') => {
+      set({ saveStatus, saveDetail: detail });
+    },
+    renameSprite: (name) => {
+      session.document.renameSprite(name);
+    },
+    setUpdateReady: (updateReady) => {
+      set({ updateReady });
+    },
+    notify: (message) => {
+      showNotice(message);
+    },
     selectTool: (tool) => {
       session.setActiveTool(tool);
     },
@@ -326,8 +378,10 @@ export function createEditorStore(session: EditorSession, clipboard: SystemClipb
       const changed = session.document.replaceColor(from, to);
       showNotice(
         changed === 0
-          ? 'That color is not in the drawing'
-          : `Replaced ${String(changed)} pixel${changed === 1 ? '' : 's'}`,
+          ? say('notice.colorMissing')
+          : changed === 1
+            ? say('notice.replacedOne')
+            : say('notice.replacedMany', { count: changed }),
       );
       return changed;
     },
@@ -366,7 +420,7 @@ export function createEditorStore(session: EditorSession, clipboard: SystemClipb
       else get().pasteInternal();
     },
     pasteInternal: () => {
-      if (!session.paste(pasteCenter())) showNotice('Nothing to paste');
+      if (!session.paste(pasteCenter())) showNotice(say('notice.nothingToPaste'));
     },
     pasteImage: (image) => {
       session.pasteBuffer(image, pasteCenter());
@@ -431,9 +485,9 @@ export function createEditorStore(session: EditorSession, clipboard: SystemClipb
   session.on('historyChanged', ({ canUndo, canRedo, undoLabel, redoLabel, cause, label }) => {
     const announcement =
       cause === 'undo' && label
-        ? `Undid: ${label}`
+        ? say('history.undid', { label: labelText(label) })
         : cause === 'redo' && label
-          ? `Redid: ${label}`
+          ? say('history.redid', { label: labelText(label) })
           : store.getState().announcement;
     store.setState({ canUndo, canRedo, undoLabel, redoLabel, announcement });
   });
@@ -450,7 +504,7 @@ export function createEditorStore(session: EditorSession, clipboard: SystemClipb
     store.setState({ hasFloating: floating !== null });
   });
   session.on('actionBlocked', ({ reason }) => {
-    showNotice(BLOCKED_MESSAGES[reason]);
+    showNotice(say(`blocked.${reason}`));
   });
   session.on('spriteReplaced', ({ sprite }) => {
     const state = store.getState();

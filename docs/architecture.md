@@ -28,9 +28,9 @@ flowchart LR
 
 Arrows only go down into the core or come out of it as events. The core never knows about React or the browser.
 
-## Current state (Phase 3)
+## Current state (Phase 4)
 
-The engine in `packages/core` has the document model, algorithms, tools, history, color math, export and viewport math. `DocumentEditor` owns the layers, the selection, floating (moved or pasted) content, the clipboard and the history; `EditorSession` adds the tools, colors and pointer input on top (ADR 010, ADR 011). `apps/web` has the Canvas 2D renderer, pointer and keyboard input, the menus, the layers and color panels, and the dialogs. The sprite carries a palette (ADR 006, ADR 012): palette edits are pure state changes like layer edits, colors are generated in OKLCH, and extraction from images runs in a Web Worker. Persistence, sharing and animation arrive in later phases.
+The engine in `packages/core` has the document model, algorithms, tools, history, color math, export and viewport math. `DocumentEditor` owns the layers, the selection, floating (moved or pasted) content, the clipboard and the history; `EditorSession` adds the tools, colors and pointer input on top (ADR 010, ADR 011). `apps/web` has the Canvas 2D renderer, pointer and keyboard input, the menus, the layers and color panels, and the dialogs. The sprite carries a palette (ADR 006, ADR 012): palette edits are pure state changes like layer edits, colors are generated in OKLCH, and extraction from images runs in a Web Worker. `apps/web` also holds persistence (IndexedDB autosave with a synchronous emergency copy), the project and share-link formats, the service worker for offline use, touch gestures and the translated interface (ADR 007, 013, 014, 015). Animation arrives in the next phase.
 
 ## Lifecycle of a stroke
 
@@ -60,3 +60,11 @@ Document state that is not pixels (layers, active layer, selection) is one immut
 ## Palettes
 
 `Sprite.palette` holds opaque colors with optional names. Edits (`palette-ops.ts`) are pure functions on the document state, so they use the same undo machinery as layers and never redraw the canvas. Color theory (harmonies, shade ramps, WCAG contrast) is pure code in `domain/color-theory.ts`. Palette files are parsed and written by `io/palette-formats.ts`, which the app loads on demand. Extracting a palette from an image is the one piece of work that leaves the main thread: `palette.worker.ts` decodes and shrinks the image, then calls the core's `medianCut`.
+
+## Saving and sharing
+
+`Persistence` (apps/web/src/state) listens to the session and writes the current sprite as a project file to IndexedDB shortly after each change, and to a synchronous `localStorage` copy when the page is hidden. The file format and the compact share format live in `@vidopix/core/project-formats`, which is loaded on demand. A share link is the compact form, deflated with the browser's `CompressionStream` and put in the URL fragment.
+
+## Drawing aids
+
+Symmetry and dithering are applied in one place, `Painter` (core/tools), which turns a requested pixel into the pixels really drawn; tools, shape previews and the pixel-perfect pencil all go through it, so what is previewed is what is committed.
