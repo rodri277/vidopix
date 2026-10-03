@@ -63,6 +63,12 @@
   overflow-x: auto;
 }
 
+/* On narrow windows the bar scrolls sideways; its controls keep their size instead of squeezing. */
+.options > * {
+  flex: none;
+  white-space: nowrap;
+}
+
 .tools {
   grid-area: tools;
   border-right: 1px solid var(--border);

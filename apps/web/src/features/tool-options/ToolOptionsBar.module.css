@@ -61,5 +61,7 @@
 }
 
 .smallSlider {
-  width: 160px;
+  /* label + range + value need about this much; less lets the value spill onto its neighbour */
+  flex: none;
+  width: 200px;
 }
