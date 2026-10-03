@@ -67,8 +67,13 @@ export function floodFillSpans(
   const visited = new Uint8Array(width * height);
   const stack: number[] = [startX, startY];
 
+  // Plain numbers rather than a rectangle object: this check runs for every pixel.
+  const minX = area.x;
+  const minY = area.y;
+  const maxX = area.x + area.width;
+  const maxY = area.y + area.height;
   const open = (x: number, y: number): boolean => {
-    if (!rectContains(area, x, y)) return false;
+    if (x < minX || y < minY || x >= maxX || y >= maxY) return false;
     const index = y * width + x;
     return visited[index] === 0 && matches(index);
   };
